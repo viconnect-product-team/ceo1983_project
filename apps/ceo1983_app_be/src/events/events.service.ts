@@ -2722,7 +2722,7 @@ export class EventsService implements OnModuleInit {
     // 1. Check in event_registrations first
     const regRows = await this.prisma.$queryRaw<any[]>`
       SELECT 
-        r.id, r.member_name as name, r.email, r.ticket_type, r.seat_assignment, r.payment_status, r.checked_in_at,
+        r.id, r.event_id, r.member_name as name, r.email, r.ticket_type, r.seat_assignment, r.payment_status, r.checked_in_at,
         COALESCE(m.company, 'Doanh nghiệp CEO 1983') as company, COALESCE(m.position, 'CEO / Hội viên') as title, COALESCE(m.phone, '0983000001') as phone
       FROM public.event_registrations r
       LEFT JOIN public.members m ON (m.code = r.member_code OR (r.email != '' AND m.email = r.email))
@@ -2734,11 +2734,44 @@ export class EventsService implements OnModuleInit {
       const already = Boolean(cur.checked_in_at);
       const result = already ? 'already' : 'success';
       if (!already) {
+        const now = new Date();
+        const thresholdDate = new Date('2026-11-21T15:00:00+07:00');
+        const checkinStatus: 'on_time' | 'late' =
+          now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
+
         await this.prisma.$executeRaw`
           UPDATE public.event_registrations
-          SET checked_in_at = now(), updated_at = now()
+          SET checked_in_at = now(),
+              checkin_status = ${checkinStatus},
+              updated_at = now()
           WHERE id = ${attendeeId}
         `.catch(() => null);
+
+        // Tự động gửi báo cáo danh sách check-in 3 định dạng về email viendoanhtri.iem@gmail.com
+        const autoReportEmail =
+          process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+        const targetEventId = cur.event_id;
+        if (targetEventId) {
+          this.sendCheckinReportEmail(
+            'system',
+            targetEventId,
+            autoReportEmail,
+            'all',
+            {
+              fullName: cur.name,
+              company: cur.company,
+              position: cur.title,
+              checkinTime: new Date().toLocaleString('vi-VN', {
+                timeZone: 'Asia/Ho_Chi_Minh',
+              }),
+              checkinStatus,
+            },
+          ).catch((err: any) => {
+            this.logger.warn(
+              `[AUTO-REPORT] Failed auto-send report on scan checkin: ${err.message}`,
+            );
+          });
+        }
 
         // Dispatch 2-way business notification
         try {
@@ -3479,6 +3512,11 @@ export class EventsService implements OnModuleInit {
     }
 
     let regId: string;
+    const now = new Date();
+    const thresholdDate = new Date('2026-11-21T15:00:00+07:00');
+    const checkinStatus: 'on_time' | 'late' =
+      now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
+
     if (existing.length > 0) {
       regId = existing[0].id;
       await this.prisma
@@ -3486,6 +3524,7 @@ export class EventsService implements OnModuleInit {
           `
         UPDATE public.event_registrations
         SET checked_in_at = ${checkedIn ? 'NOW()' : 'checked_in_at'},
+            checkin_status = ${checkedIn ? `'${checkinStatus}'` : 'checkin_status'},
             seat_assignment = COALESCE($1, seat_assignment),
             payment_status = $2,
             updated_at = NOW()
@@ -3503,10 +3542,10 @@ export class EventsService implements OnModuleInit {
           `
         INSERT INTO public.event_registrations (
           id, event_id, member_code, member_name, email, registered_at, status,
-          ticket_type, seat_assignment, payment_status, reminder_count, checked_in_at, created_at, updated_at
+          ticket_type, seat_assignment, payment_status, reminder_count, checked_in_at, checkin_status, created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, NOW(), 'confirmed',
-          $6, $7, $8, 0, ${checkedIn ? 'NOW()' : 'NULL'}, NOW(), NOW()
+          $6, $7, $8, 0, ${checkedIn ? 'NOW()' : 'NULL'}, ${checkedIn ? `'${checkinStatus}'` : "''"}, NOW(), NOW()
         )
       `,
           regId,
@@ -3528,6 +3567,28 @@ export class EventsService implements OnModuleInit {
           eventId,
         )
         .catch(() => null);
+    }
+
+    if (checkedIn) {
+      const autoReportEmail =
+        process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+      this.sendCheckinReportEmail(
+        userId,
+        eventId,
+        autoReportEmail,
+        'all',
+        {
+          fullName: memberName,
+          checkinTime: new Date().toLocaleString('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+          }),
+          checkinStatus,
+        },
+      ).catch((err: any) => {
+        this.logger.warn(
+          `[AUTO-REPORT] Failed auto-send report on admin addOrCheckinAttendee: ${err.message}`,
+        );
+      });
     }
 
     return {
@@ -3994,8 +4055,27 @@ export class EventsService implements OnModuleInit {
     const resolvedEventId = event.id;
 
     // 2. Tính toán phân loại check-in (30 phút từ thời điểm bắt đầu)
-    // Sự kiện 14h30 ngày 21/11/2026 => Mốc 30 phút là 15h00
+    // Sự kiện bắt đầu: 14h30 Thứ Bảy, 21/11/2026 => Mốc 30 phút đầu là đúng 15h00 chiều (15:00:00) theo giờ Việt Nam
     const now = new Date();
+
+    // Chuẩn hóa ngày sự kiện theo timezone Việt Nam (Asia/Ho_Chi_Minh)
+    let eventDateStr = '2026-11-21';
+    if (event.date) {
+      try {
+        const dObj = event.date instanceof Date ? event.date : new Date(event.date);
+        const vnDateParts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(dObj);
+        if (vnDateParts && vnDateParts.length === 10) {
+          eventDateStr = vnDateParts;
+        }
+      } catch {}
+    }
+
+    // Giờ bắt đầu mặc định: 14h30. Ngưỡng 30 phút: đúng 15h00 ngày 21/11/2026
     let startTimeHours = 14;
     let startTimeMinutes = 30;
     if (event.time && typeof event.time === 'string') {
@@ -4006,21 +4086,15 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    let thresholdDate: Date;
-    if (event.date) {
-      const dStr =
-        event.date instanceof Date
-          ? event.date.toISOString().slice(0, 10)
-          : String(event.date).slice(0, 10);
-      thresholdDate = new Date(
-        `${dStr}T${String(startTimeHours).padStart(2, '0')}:${String(startTimeMinutes).padStart(2, '0')}:00+07:00`,
-      );
-    } else {
-      thresholdDate = new Date('2026-11-21T14:30:00+07:00');
-    }
-    // Ngưỡng 30 phút sau khi khai mạc
+    const thresholdDate = new Date(
+      `${eventDateStr}T${String(startTimeHours).padStart(2, '0')}:${String(startTimeMinutes).padStart(2, '0')}:00+07:00`,
+    );
+    // Cộng đúng 30 phút đầu: 14h30 + 30p = đúng 15h00:00 ngày 21/11/2026
     thresholdDate.setMinutes(thresholdDate.getMinutes() + 30);
 
+    // Mốc thời gian chuẩn:
+    // - Check-in trước hoặc đúng 15h00: 'on_time' (Đúng giờ trong 30 phút đầu)
+    // - Check-in sau 15h00 chiều: 'late' (Check-in muộn)
     const checkinStatus: 'on_time' | 'late' =
       now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
 
@@ -4068,6 +4142,9 @@ export class EventsService implements OnModuleInit {
           SET member_name = ${fullName},
               email = ${email},
               phone = ${phone},
+              company = ${company},
+              position = ${position},
+              checkin_status = ${checkinStatus},
               status = 'confirmed',
               checked_in_at = now(),
               ticket_type = ${ticketMeta},
@@ -4086,6 +4163,7 @@ export class EventsService implements OnModuleInit {
         await this.prisma.$executeRaw`
           INSERT INTO public.event_registrations (
             id, event_id, member_code, member_name, email, phone,
+            company, position, checkin_status,
             registered_at, checked_in_at, status, ticket_type, qr_payload,
             payment_status, payment_amount, association_id,
             created_at, updated_at
@@ -4096,6 +4174,9 @@ export class EventsService implements OnModuleInit {
             ${fullName},
             ${email},
             ${phone},
+            ${company},
+            ${position},
+            ${checkinStatus},
             now()::date,
             now(),
             'confirmed',
@@ -4114,6 +4195,7 @@ export class EventsService implements OnModuleInit {
           await this.prisma.$executeRaw`
             INSERT INTO public.event_registrations (
               id, event_id, member_code, member_name, email, phone,
+              company, position, checkin_status,
               registered_at, checked_in_at, status, ticket_type, qr_payload,
               association_id
             ) VALUES (
@@ -4123,6 +4205,9 @@ export class EventsService implements OnModuleInit {
               ${fullName},
               ${email},
               ${phone},
+              ${company},
+              ${position},
+              ${checkinStatus},
               now()::date,
               now(),
               'confirmed',
@@ -4151,10 +4236,10 @@ export class EventsService implements OnModuleInit {
           company,
           eventTitle: event.name || event.title,
           eventDate: 'Thứ 7, ngày 21/11/2026',
-          eventTime: '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
+          eventTime: '14h30 - 17h30, Thứ 7, ngày 21/11/2026',
           eventLocation:
             event.location ||
-            'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+            'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội',
           checkedInAt: checkedInAtFormatted,
           checkinStatus,
           hotline: '0988.870.888 / 0903.203.204',
@@ -4165,6 +4250,33 @@ export class EventsService implements OnModuleInit {
           );
         });
     }
+
+    // 4.1. Tự động gửi báo cáo danh sách check-in đầy đủ 3 định dạng (Excel, Word, PDF) về email viendoanhtri.iem@gmail.com
+    const autoReportEmail =
+      process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+    this.sendCheckinReportEmail(
+      'system',
+      resolvedEventId,
+      autoReportEmail,
+      'all',
+      {
+        fullName,
+        position,
+        company,
+        checkinTime: checkedInAtFormatted,
+        checkinStatus,
+      },
+    )
+      .then(() => {
+        this.logger.log(
+          `[AUTO-REPORT] Đã tự động gửi báo cáo check-in đủ 3 định dạng (Excel, Word, PDF) về ${autoReportEmail} sau khi ${fullName} check-in (Mã: ${regId})`,
+        );
+      })
+      .catch((reportErr: any) => {
+        this.logger.warn(
+          `[AUTO-REPORT] Lỗi tự động gửi báo cáo check-in về ${autoReportEmail}: ${reportErr.message}`,
+        );
+      });
 
     // 5. Lấy danh sách đại biểu đã đăng ký & điểm danh mới nhất
     const attendeesData = await this.getPublicAttendees(resolvedEventId).catch(() => ({
@@ -4373,7 +4485,7 @@ export class EventsService implements OnModuleInit {
       ['BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN'],
       [`Sự kiện: ${eventName}`],
       ['Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)'],
-      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội'],
+      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội'],
       [`Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: ${nowFormatted}`],
       [`Tổng số đại biểu: ${rows.length} | Đúng giờ (trong 30p): ${onTimeCount} | Check-in muộn: ${lateCount}`],
       [],
@@ -4508,7 +4620,7 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 160 },
               children: [
                 new DocxTextRun({
-                  text: 'Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00) | Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội | Hotline: 0988.870.888 / 0903.203.204',
+                  text: 'Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00) | Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội | Hotline: 0988.870.888 / 0903.203.204',
                   italics: true,
                   size: 18,
                   color: '64748B',
@@ -4520,7 +4632,7 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 160 },
               children: [
                 new DocxTextRun({
-                  text: `Thời gian: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00)\nĐịa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội\n`,
+                  text: `Thời gian: 14h30 - 17h30, Thứ 7 ngày 21/11/2026 (Tiệc: 18h00 - 22h00)\nĐịa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội\n`,
                   size: 19,
                   color: '64748B',
                 }),
@@ -4789,7 +4901,7 @@ export class EventsService implements OnModuleInit {
     });
 
     page.drawText(
-      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Trung hoa nhan chinh, HN`,
+      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Hoang Dao Thuy, HN`,
       {
         x: 50,
         y: height - 110,
@@ -4902,6 +5014,13 @@ export class EventsService implements OnModuleInit {
     eventId: string,
     targetEmail: string,
     format: 'all' | 'excel' | 'word' | 'pdf' = 'all',
+    latestAttendee?: {
+      fullName: string;
+      position?: string;
+      company?: string;
+      checkinTime?: string;
+      checkinStatus?: string;
+    },
   ) {
     const cleanEmail = (targetEmail || '').trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -5012,6 +5131,7 @@ export class EventsService implements OnModuleInit {
       totalAttendees: rows.filter((r) => r.checked_in_at).length,
       onTimeCount,
       lateCount,
+      latestAttendee,
     });
 
     return {

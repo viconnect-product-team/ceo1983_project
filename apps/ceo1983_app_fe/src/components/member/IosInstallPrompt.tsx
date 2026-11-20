@@ -14,6 +14,14 @@ import {
 import { toast } from "sonner";
 
 export function IosInstallPrompt() {
+  if (typeof window !== "undefined") {
+    const currentPath = window.location.pathname.toLowerCase();
+    // Tuyệt đối không hiển thị popup hướng dẫn PWA khi quét QR hoặc ở trang checkin
+    if (currentPath.startsWith("/checkin")) {
+      return null;
+    }
+  }
+
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
   const [isInAppBrowser, setIsInAppBrowser] = useState(false);

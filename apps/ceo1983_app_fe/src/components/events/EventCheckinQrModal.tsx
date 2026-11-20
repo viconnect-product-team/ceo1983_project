@@ -41,7 +41,8 @@ export function EventCheckinQrModal({
 }: EventCheckinQrModalProps) {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http"); // Mặc định http để Zalo và mọi camera quét ăn ngay không bị lỗi chứng chỉ
+  const [protocolMode, setProtocolMode] = useState<"https" | "http">("http");
+  const [targetHostMode, setTargetHostMode] = useState<"current" | "prod">("current");
 
   if (!open) return null;
 
@@ -50,8 +51,16 @@ export function EventCheckinQrModal({
       ? window.location.host
       : "crm.ceo1983.viconnect.vn";
 
-  const scheme = protocolMode === "http" ? "http:" : "https:";
-  const checkinUrl = `${scheme}//${currentHost}/checkin/${event.id}`;
+  const selectedHost =
+    targetHostMode === "prod" ? "crm.ceo1983.viconnect.vn" : currentHost;
+
+  const isSelectedHostLocal =
+    selectedHost.includes("localhost") || selectedHost.includes("127.0.0.1");
+
+  // Localhost dev server chạy HTTP, không chạy HTTPS (tránh ERR_SSL_PROTOCOL_ERROR)
+  const effectiveProtocol = isSelectedHostLocal ? "http" : protocolMode;
+  const scheme = effectiveProtocol === "http" ? "http:" : "https:";
+  const checkinUrl = `${scheme}//${selectedHost}/checkin/${event.id}`;
   const qrImageUrl = getAbsoluteQrUrl(checkinUrl, 500);
 
   const eventName =
@@ -137,32 +146,77 @@ export function EventCheckinQrModal({
             </div>
           </div>
 
-          {/* Protocol Toggle (Bảo đảm Zalo & mọi thiết bị không bị lỗi chứng chỉ) */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold gap-1">
-            <button
-              type="button"
-              onClick={() => setProtocolMode("http")}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                protocolMode === "http"
-                  ? "bg-[#005BAC] text-white shadow-xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>HTTP (Khuyên dùng - Quét ăn ngay trên Zalo & mọi camera)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setProtocolMode("https")}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                protocolMode === "https"
-                  ? "bg-[#005BAC] text-white shadow-xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>HTTPS</span>
-            </button>
+          {/* Chọn Môi Trường & Giao Thức (Local vs Test vs Production) */}
+          <div className="w-full max-w-md space-y-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+            {/* Host Selector */}
+            <div className="flex items-center justify-between text-xs gap-1">
+              <span className="text-slate-500 font-bold shrink-0 text-[11px]">Môi trường:</span>
+              <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold gap-1">
+                <button
+                  type="button"
+                  onClick={() => setTargetHostMode("current")}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    targetHostMode === "current"
+                      ? "bg-white text-[#005BAC] shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Host hiện tại ({currentHost})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetHostMode("prod")}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    targetHostMode === "prod"
+                      ? "bg-white text-[#005BAC] shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Production (crm.ceo1983.viconnect.vn)
+                </button>
+              </div>
+            </div>
+
+            {/* Protocol Toggle */}
+            <div className="flex items-center justify-between text-xs gap-1 border-t border-slate-200/60 pt-2">
+              <span className="text-slate-500 font-bold shrink-0 text-[11px]">Giao thức:</span>
+              <div className="flex bg-slate-200/80 p-0.5 rounded-lg text-[11px] font-semibold gap-1">
+                <button
+                  type="button"
+                  onClick={() => setProtocolMode("http")}
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1 cursor-pointer ${
+                    effectiveProtocol === "http"
+                      ? "bg-[#005BAC] text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Globe className="w-3 h-3" />
+                  <span>HTTP (Khuyên dùng)</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isSelectedHostLocal}
+                  onClick={() => setProtocolMode("https")}
+                  title={isSelectedHostLocal ? "Localhost chỉ hỗ trợ HTTP" : undefined}
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1 cursor-pointer ${
+                    effectiveProtocol === "https"
+                      ? "bg-[#005BAC] text-white shadow-xs font-bold"
+                      : isSelectedHostLocal
+                        ? "text-slate-400 opacity-50 cursor-not-allowed"
+                        : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>HTTPS</span>
+                </button>
+              </div>
+            </div>
+
+            {isSelectedHostLocal && (
+              <p className="text-[10px] text-amber-700 italic text-left">
+                * Đang ở môi trường Local dev server: Tự động dùng HTTP (tránh lỗi SSL Protocol Error).
+              </p>
+            )}
           </div>
 
           {/* QR Code Presentation Frame */}
@@ -186,7 +240,7 @@ export function EventCheckinQrModal({
           <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 text-left space-y-1">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
               <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-              <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, Hà Nội</span>
+              <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội</span>
             </div>
             <div className="flex items-center gap-2 font-medium text-slate-600">
               <Phone className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />

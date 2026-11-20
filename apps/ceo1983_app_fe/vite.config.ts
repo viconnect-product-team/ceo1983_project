@@ -74,6 +74,7 @@ export default defineConfig(({ command }): UserConfig => {
       chunkSizeWarningLimit: 2500,
     },
     server: {
+      host: true,
       port: 5173,
       watch: {
         ignored: [

@@ -3434,7 +3434,7 @@ export class MailService {
       eventTitle,
       eventDate = '21/11/2026',
       eventTime = '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
-      eventLocation = 'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+      eventLocation = 'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội',
       checkedInAt,
       checkinStatus,
       hotline = '0988.870.888 / 0903.203.204',
@@ -3610,6 +3610,13 @@ export class MailService {
     totalAttendees: number;
     onTimeCount: number;
     lateCount: number;
+    latestAttendee?: {
+      fullName: string;
+      position?: string;
+      company?: string;
+      checkinTime?: string;
+      checkinStatus?: string;
+    };
   }): Promise<{ ok: boolean; message?: string }> {
     const {
       to,
@@ -3618,6 +3625,7 @@ export class MailService {
       totalAttendees,
       onTimeCount,
       lateCount,
+      latestAttendee,
     } = options;
 
     const cleanTo = (to || '').trim().toLowerCase();
@@ -3627,7 +3635,9 @@ export class MailService {
 
     const fileNamesList = attachments.map((a) => a.filename).join(', ');
 
-    const subject = `[Báo Cáo Viện Doanh Trí] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
+    const subject = latestAttendee
+      ? `[Viện Doanh Trí] Báo Cáo Check-in (${latestAttendee.fullName}): ${eventName}`
+      : `[Báo Cáo Viện Doanh Trí] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
     const html = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -3647,6 +3657,23 @@ export class MailService {
     <div style="background: #f0fdf4; border-left: 4px solid #00A859; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #166534;">
       ${eventName}
     </div>
+    ${
+      latestAttendee
+        ? `
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #005BAC; padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 13px; color: #1e3a8a;">
+      <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #005BAC;">
+        🔔 Vừa Có Đại Biểu Hoàn Tất Check-in Điểm Danh:
+      </div>
+      <div style="line-height: 1.6;">
+        • <strong>Họ và tên:</strong> ${latestAttendee.fullName}<br/>
+        ${latestAttendee.company ? `• <strong>Đơn vị / Doanh nghiệp:</strong> ${latestAttendee.company}<br/>` : ''}
+        ${latestAttendee.position ? `• <strong>Chức danh:</strong> ${latestAttendee.position}<br/>` : ''}
+        • <strong>Thời gian check-in:</strong> ${latestAttendee.checkinTime || 'Vừa xong'} (${latestAttendee.checkinStatus === 'on_time' ? '<span style="color:#16a34a; font-weight:700;">Đúng giờ</span>' : '<span style="color:#d97706; font-weight:700;">Check-in muộn</span>'})
+      </div>
+    </div>
+    `
+        : ''
+    }
     <div style="margin: 20px 0;">
       <div class="stat">
         <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Tổng Đại Biểu</div>

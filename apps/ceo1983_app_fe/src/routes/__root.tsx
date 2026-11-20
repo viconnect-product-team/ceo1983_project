@@ -337,6 +337,16 @@ function GlobalViOneVoiceAssistant() {
   return <ViOneVoiceAssistant />;
 }
 
+function ConditionalIosInstallPrompt() {
+  const routerState = useRouterState();
+  const pathname =
+    routerState?.location?.pathname ||
+    (typeof window !== "undefined" ? window.location.pathname : "");
+  // Tuyệt đối không hiển thị popup hướng dẫn từ dưới lên khi quét QR hoặc ở trang /checkin
+  if (pathname.toLowerCase().startsWith("/checkin")) return null;
+  return <IosInstallPrompt />;
+}
+
 function RootComponent() {
   const [lang, setLangState] = useState<Lang>("vi");
   const [queryClient] = useState(makeQueryClient);
@@ -507,7 +517,7 @@ function RootComponent() {
             <AuthGate>
               <Outlet />
             </AuthGate>
-            <IosInstallPrompt />
+            <ConditionalIosInstallPrompt />
           </AuthProvider>
           <Toaster position="top-right" />
         </ThemeProvider>
