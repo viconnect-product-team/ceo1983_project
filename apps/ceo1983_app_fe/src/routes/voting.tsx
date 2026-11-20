@@ -17,6 +17,8 @@ import {
   Star,
   ExternalLink,
   Copy,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/dashboard/AppShell";
@@ -721,10 +723,12 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const [title, setTitle] = useState(
     vote?.title ? vote.title.replace("[STAR_RATING]", "").trim() : "",
   );
-  const [type, setType] = useState<Vote["type"]>(vote?.type ?? "policy");
-  const [targetAudience, setTargetAudience] = useState("all");
+  const type: Vote["type"] = vote?.type ?? "policy";
+  const [targetAudience, setTargetAudience] = useState(vote ? "all" : "checked_in");
   const [eventId, setEventId] = useState(vote?.eventId ?? "");
   const [eventsList, setEventsList] = useState<Array<{ id: string; title: string; eventDate?: string; status?: string }>>([]);
+  const [checkedInAttendees, setCheckedInAttendees] = useState<any[]>([]);
+  const [loadingAttendees, setLoadingAttendees] = useState(false);
   const [startsAt, setStartsAt] = useState(
     vote?.startsAt ? vote.startsAt.slice(0, 10) : "",
   );
@@ -737,11 +741,51 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchCheckedInAttendees = async (targetId?: string) => {
+    const effectiveEventId = targetId || eventId;
+    if (!effectiveEventId) {
+      setCheckedInAttendees([]);
+      return;
+    }
+    setLoadingAttendees(true);
+    try {
+      const res = await fetchNestApi<any>(`/events/${effectiveEventId}/attendees-preview`).catch(async () => {
+        return await fetchNestApi<any>(`/events/${effectiveEventId}/public-attendees`).catch(() => null);
+      });
+      const rawList = Array.isArray(res) ? res : res?.attendees || [];
+      const filtered = rawList.filter((a: any) =>
+        Boolean(a.checkedInAt || a.checked_in_at || a.checkinStatus || a.checkedIn)
+      );
+      setCheckedInAttendees(filtered.length > 0 ? filtered : rawList);
+    } catch {
+      setCheckedInAttendees([]);
+    } finally {
+      setLoadingAttendees(false);
+    }
+  };
+
+  useEffect(() => {
+    if (targetAudience === "checked_in") {
+      fetchCheckedInAttendees();
+    }
+  }, [eventId, targetAudience]);
+
   useEffect(() => {
     fetchNestApi<any>("/events?page=1&size=100")
       .then((res) => {
         const items = Array.isArray(res) ? res : res?.items || [];
         setEventsList(items);
+        if (!eventId && items.length > 0) {
+          const dtEvent =
+            items.find((e: any) =>
+              String(e.id).includes("doanhtri") ||
+              String(e.title || (e as any).name).toLowerCase().includes("doanh trí"),
+            ) || items[0];
+          if (dtEvent) {
+            setEventId(dtEvent.id);
+            fetchCheckedInAttendees(dtEvent.id);
+          }
+        }
       })
       .catch(() => {});
   }, []);
@@ -793,7 +837,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
           },
         });
       } else {
-        await createVote({
+        const res: any = await createVote({
           data: {
             title: finalTitle,
             description:
@@ -809,6 +853,17 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
             eventId: eventId || null,
           },
         });
+
+        // Tự động phát liên kết biểu quyết tới toàn bộ khách đã check-in nếu chọn đối tượng này
+        if (targetAudience === "checked_in" && res?.id) {
+          fetchNestApi(`/voting/polls/${res.id}/send-to-checkedin`, { method: "POST" })
+            .then((sendRes: any) => {
+              if (sendRes?.sentCount) {
+                toast.success(`Đã tự động gửi email biểu quyết tới ${sendRes.sentCount} đại biểu đã điểm danh!`);
+              }
+            })
+            .catch(() => {});
+        }
       }
       await router.invalidate();
       onClose();
@@ -950,34 +1005,122 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Loại</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as Vote["type"])}
-              className={inputCls}
-            >
-              <option value="policy">Chính sách</option>
-              <option value="election">Bầu cử</option>
-              <option value="amendment">Sửa đổi điều lệ</option>
-            </select>
-          </div>
-
-          <div>
             <label className="mb-1 block text-sm font-medium text-foreground">
               Đối tượng nhận thông báo biểu quyết
             </label>
             <select
               value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTargetAudience(val);
+                if (val === "checked_in") {
+                  if (!eventId && eventsList.length > 0) {
+                    const dtEvent =
+                      eventsList.find((ev: any) =>
+                        String(ev.id).includes("doanhtri") ||
+                        String(ev.title || (ev as any).name).toLowerCase().includes("doanh trí"),
+                      ) || eventsList[0];
+                    if (dtEvent) {
+                      setEventId(dtEvent.id);
+                      fetchCheckedInAttendees(dtEvent.id);
+                    }
+                  } else if (eventId) {
+                    fetchCheckedInAttendees(eventId);
+                  }
+                }
+              }}
               className={inputCls}
             >
+              <option value="checked_in">✅ Khách / Đại biểu đã check-in sự kiện (Khuyên dùng)</option>
               <option value="all">🌐 Toàn thể Hội viên (App Hiệp hội & CRM)</option>
               <option value="members">⭐ Chỉ hội viên chính thức hiệp hội</option>
               <option value="non_members">🎯 Người ngoài hiệp hội (Khách mời sự kiện)</option>
             </select>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              * Hệ thống sẽ tự động phát thông báo thời gian thực tới App Hội viên và CRM cho các đối tượng liên quan đã chọn.
+              * Hệ thống sẽ tự động phát thông báo thời gian thực và gửi email liên kết biểu quyết tới các đối tượng liên quan đã chọn.
             </p>
+
+            {/* DANH SÁCH KHÁCH ĐÃ CHECK-IN CỦA MỖI SỰ KIỆN CỤ THỂ */}
+            {targetAudience === "checked_in" && (
+              <div className="mt-3 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/25 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
+                      Danh Sách Khách Đã Check-in Sự Kiện ({checkedInAttendees.length} khách):
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchCheckedInAttendees()}
+                    disabled={loadingAttendees}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
+                  >
+                    <RefreshCw className={`size-3 ${loadingAttendees ? "animate-spin" : ""}`} />
+                    <span>Làm mới</span>
+                  </button>
+                </div>
+
+                {!eventId ? (
+                  <div className="p-3 text-center text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-300/40">
+                    ⚠️ Vui lòng chọn Sự kiện liên kết ở mục trên để hệ thống tải danh sách khách đã check-in.
+                  </div>
+                ) : loadingAttendees ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <Loader2 className="size-4 animate-spin text-emerald-600" />
+                    <span>Đang tải danh sách khách đã điểm danh...</span>
+                  </div>
+                ) : checkedInAttendees.length === 0 ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground bg-white/60 dark:bg-black/20 rounded-xl border border-border">
+                    Chưa có khách nào check-in cho sự kiện này. Đại biểu quét mã QR điểm danh sẽ tự động xuất hiện tại đây.
+                  </div>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-white dark:bg-card divide-y divide-border text-xs">
+                    {checkedInAttendees.map((att: any, idx: number) => {
+                      const name = att.memberName || att.member_name || att.fullName || att.name || `Khách ${idx + 1}`;
+                      const company = att.company || "Doanh nghiệp";
+                      const position = att.position || "";
+                      const email = att.email || att.maskedEmail || "";
+                      const phone = att.phone || att.maskedPhone || "";
+                      const checkinAt = att.checkedInAt || att.checked_in_at || "";
+                      const isLate = att.checkinStatus === "late";
+                      return (
+                        <div key={att.id || idx} className="p-2.5 flex items-center justify-between gap-3 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/10">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-foreground text-xs">{name}</span>
+                              {company && <span className="text-[11px] text-muted-foreground">· {company}</span>}
+                              {position && <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-medium">{position}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                              {email && <span className="text-blue-600 dark:text-blue-400 font-mono">✉️ {email}</span>}
+                              {phone && <span>📞 {phone}</span>}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isLate
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300"
+                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
+                            }`}>
+                              {isLate ? "Check-in muộn" : "Đúng giờ"}
+                            </span>
+                            {checkinAt && (
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                {typeof checkinAt === "string" && checkinAt.includes(":") ? checkinAt : new Date(checkinAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  * Khi tạo biểu quyết, hệ thống sẽ tự động gửi email và phát thông báo liên kết biểu quyết tới toàn bộ danh sách khách đã check-in của sự kiện này.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
