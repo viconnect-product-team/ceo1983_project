@@ -499,4 +499,23 @@ export class EventsController {
   ) {
     return this.eventsService.notifyLuckyDrawWinner(eventId, body);
   }
+
+  /**
+   * Bốc thăm trúng thưởng: Lấy cấu hình giải thưởng và giao diện banner thực tế từ CSDL 113.20.107.184:6432
+   */
+  @Get(':id/lucky-draw/config')
+  async getEventLuckyDrawConfig(@Param('id') eventId: string) {
+    return this.eventsService.getEventLuckyDrawConfig(eventId);
+  }
+
+  /**
+   * Bốc thăm trúng thưởng: Lưu cấu hình giải thưởng và giao diện banner tùy chỉnh vào CSDL 113.20.107.184:6432
+   */
+  @Put(':id/lucky-draw/config')
+  async saveEventLuckyDrawConfig(
+    @Param('id') eventId: string,
+    @Body() body: any,
+  ) {
+    return this.eventsService.saveEventLuckyDrawConfig(eventId, body);
+  }
 }
