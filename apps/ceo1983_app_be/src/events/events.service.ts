@@ -4311,10 +4311,10 @@ export class EventsService implements OnModuleInit {
   }
 
   /**
-   * Tạo Buffer file Excel (.xlsx) danh sách đại biểu check-in
+   * Tạo Buffer file Excel (.xlsx) danh sách đại biểu check-in kèm Header trang nhã Viện Doanh Trí
    */
   generateCheckinExcel(rows: any[], eventName: string): Buffer {
-    const excelData = rows.map((r, index) => {
+    const rawData = rows.map((r, index) => {
       let parsed: any = {};
       try {
         if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
@@ -4349,32 +4349,87 @@ export class EventsService implements OnModuleInit {
               ? 'Đã check-in'
               : 'Chưa check-in';
 
-      return {
-        STT: index + 1,
-        'Mã Đăng Ký': r.id,
-        'Họ và Tên': r.member_name || parsed.fullName || '—',
-        Email: r.email || parsed.email || '—',
-        'Chức Danh': r.position || parsed.position || '—',
-        'Công Ty / Doanh Nghiệp': r.company || parsed.company || '—',
-        'Số Điện Thoại': r.phone || parsed.phone || '—',
-        'Thời Gian Check-in': checkinTime,
-        'Phân Loại Check-in': statusText,
-        'Hạng Vé': parsed.label || (r.ticket_type && !String(r.ticket_type).startsWith('{') ? r.ticket_type : 'Vé Mời Toạ Đàm'),
-      };
+      return [
+        index + 1,
+        r.id,
+        r.member_name || parsed.fullName || '—',
+        r.phone || parsed.phone || '—',
+        r.email || parsed.email || '—',
+        r.position || parsed.position || '—',
+        r.company || parsed.company || '—',
+        checkinTime,
+        statusText,
+        parsed.label || (r.ticket_type && !String(r.ticket_type).startsWith('{') ? r.ticket_type : 'Vé Mời Toạ Đàm'),
+      ];
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const nowFormatted = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const onTimeCount = rawData.filter((d) => d[8] === 'Đúng giờ (trong 30p)').length;
+    const lateCount = rawData.filter((d) => d[8] === 'Check-in muộn (>30p)').length;
+
+    const sheetData: any[][] = [
+      ['VIỆN DOANH TRÍ'],
+      ['KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11'],
+      ['BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN'],
+      [`Sự kiện: ${eventName}`],
+      ['Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)'],
+      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội'],
+      [`Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: ${nowFormatted}`],
+      [`Tổng số đại biểu: ${rows.length} | Đúng giờ (trong 30p): ${onTimeCount} | Check-in muộn: ${lateCount}`],
+      [],
+      [
+        'STT',
+        'Mã Đăng Ký',
+        'Họ và Tên Đại Biểu',
+        'Số Điện Thoại',
+        'Email',
+        'Chức Danh',
+        'Công Ty / Doanh Nghiệp',
+        'Thời Gian Check-in',
+        'Phân Loại Check-in',
+        'Hạng Vé',
+      ],
+      ...rawData,
+      [],
+      [
+        'TỔNG CỘNG ĐẠI BIỂU:',
+        '',
+        `${rows.length} người`,
+        '',
+        '',
+        '',
+        '',
+        `Đã check-in: ${onTimeCount + lateCount}`,
+        `Đúng giờ: ${onTimeCount} | Muộn: ${lateCount}`,
+        '',
+      ],
+      [],
+      ['', '', 'NGƯỜI LẬP BIỂU', '', '', 'BAN TỔ CHỨC', '', '', 'VIỆN DOANH TRÍ', ''],
+      ['', '', '(Ký, ghi rõ họ tên)', '', '', '(Ký, ghi rõ họ tên)', '', '', '(Ký, đóng dấu)', ''],
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
     worksheet['!cols'] = [
       { wch: 6 },
       { wch: 18 },
       { wch: 25 },
+      { wch: 16 },
       { wch: 28 },
       { wch: 20 },
-      { wch: 30 },
-      { wch: 15 },
-      { wch: 22 },
+      { wch: 32 },
       { wch: 24 },
-      { wch: 15 },
+      { wch: 24 },
+      { wch: 18 },
+    ];
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } },
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 9 } },
+      { s: { r: 6, c: 0 }, e: { r: 6, c: 9 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 9 } },
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -4402,13 +4457,13 @@ export class EventsService implements OnModuleInit {
           children: [
             new DocxParagraph({
               alignment: DocxAlignmentType.CENTER,
-              spacing: { after: 100 },
+              spacing: { after: 80 },
               children: [
                 new DocxTextRun({
                   text: 'VIỆN DOANH TRÍ',
                   bold: true,
                   size: 32,
-                  color: '8B0000',
+                  color: '005BAC',
                 }),
               ],
             }),
@@ -4419,8 +4474,8 @@ export class EventsService implements OnModuleInit {
                 new DocxTextRun({
                   text: 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11',
                   bold: true,
-                  size: 22,
-                  color: '1E293B',
+                  size: 20,
+                  color: '00A859',
                 }),
               ],
             }),
@@ -4431,8 +4486,20 @@ export class EventsService implements OnModuleInit {
                 new DocxTextRun({
                   text: 'BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN',
                   bold: true,
-                  size: 26,
-                  color: '991B1B',
+                  size: 24,
+                  color: '005BAC',
+                }),
+              ],
+            }),
+            new DocxParagraph({
+              alignment: DocxAlignmentType.CENTER,
+              spacing: { after: 80 },
+              children: [
+                new DocxTextRun({
+                  text: `Sự kiện: ${eventName}`,
+                  bold: true,
+                  size: 20,
+                  color: '1E293B',
                 }),
               ],
             }),
@@ -4441,10 +4508,10 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 160 },
               children: [
                 new DocxTextRun({
-                  text: `Sự kiện: ${eventName}`,
+                  text: 'Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00) | Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội | Hotline: 0988.870.888 / 0903.203.204',
                   italics: true,
-                  size: 20,
-                  color: '475569',
+                  size: 18,
+                  color: '64748B',
                 }),
               ],
             }),
@@ -4687,49 +4754,57 @@ export class EventsService implements OnModuleInit {
     let page = pdfDoc.addPage([595.28, 841.89]); // A4
     const { width, height } = page.getSize();
 
-    // Header Viện Doanh Trí
+    // Header Viện Doanh Trí (Màu xanh nhận diện thương hiệu #005BAC & #00A859)
     page.drawText('VIEN DOANH TRI', {
       x: 50,
-      y: height - 50,
+      y: height - 45,
       size: 16,
       font: boldFont,
-      color: pdfRgb(0.545, 0, 0),
+      color: pdfRgb(0, 0.357, 0.675), // #005BAC
+    });
+
+    page.drawText('KY NIEM 4 NAM VIEN DOANH TRI & TRI AN NGAY NHA GIAO VN 20/11', {
+      x: 50,
+      y: height - 62,
+      size: 10,
+      font: boldFont,
+      color: pdfRgb(0, 0.659, 0.349), // #00A859
     });
 
     page.drawText('DANH SACH DAI BIEU DIEM DANH CHECK-IN', {
       x: 50,
-      y: height - 72,
-      size: 13,
+      y: height - 80,
+      size: 12,
       font: boldFont,
       color: pdfRgb(0.1, 0.15, 0.25),
     });
 
     const safeEventName = this.sanitizePdfText(eventName);
-    page.drawText(`Su kien: ${safeEventName.slice(0, 75)}`, {
+    page.drawText(`Su kien: ${safeEventName.slice(0, 80)}`, {
       x: 50,
-      y: height - 90,
-      size: 9,
-      font: regFont,
-      color: pdfRgb(0.3, 0.35, 0.45),
+      y: height - 96,
+      size: 8.5,
+      font: boldFont,
+      color: pdfRgb(0.2, 0.25, 0.35),
     });
 
     page.drawText(
-      `Thoi gian: 14h30 - 17h30, 21/11/2026 | Dia diem: Tang 2, NH Long Phung, 29T2 Trung hoa nhan chinh, HN`,
+      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Trung hoa nhan chinh, HN`,
       {
         x: 50,
-        y: height - 105,
-        size: 8,
+        y: height - 110,
+        size: 7.5,
         font: regFont,
-        color: pdfRgb(0.4, 0.4, 0.4),
+        color: pdfRgb(0.4, 0.45, 0.5),
       },
     );
 
     page.drawText(
-      `Tong so dai bieu: ${rows.length}  |  Dung gio (trong 30p): ${onTimeCount}  |  Check-in muon: ${lateCount}`,
+      `Hotline BTC: 0988.870.888 / 0903.203.204 | Tong so dai bieu: ${rows.length} | Dung gio (30p): ${onTimeCount} | Muon: ${lateCount}`,
       {
         x: 50,
-        y: height - 122,
-        size: 9,
+        y: height - 124,
+        size: 8,
         font: boldFont,
         color: pdfRgb(0.06, 0.09, 0.16),
       },
@@ -4740,16 +4815,16 @@ export class EventsService implements OnModuleInit {
     page.drawLine({
       start: { x: 50, y: currentY + 12 },
       end: { x: width - 50, y: currentY + 12 },
-      thickness: 1,
-      color: pdfRgb(0.8, 0.8, 0.8),
+      thickness: 1.5,
+      color: pdfRgb(0, 0.357, 0.675),
     });
 
-    page.drawText('STT', { x: 52, y: currentY, size: 8, font: boldFont });
-    page.drawText('HO VA TEN', { x: 75, y: currentY, size: 8, font: boldFont });
-    page.drawText('CHUC DANH', { x: 175, y: currentY, size: 8, font: boldFont });
-    page.drawText('DOANH NGHIEP', { x: 255, y: currentY, size: 8, font: boldFont });
-    page.drawText('THOI GIAN CHECK-IN', { x: 385, y: currentY, size: 8, font: boldFont });
-    page.drawText('TRANG THAI', { x: 495, y: currentY, size: 8, font: boldFont });
+    page.drawText('STT', { x: 52, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
+    page.drawText('HO VA TEN', { x: 75, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
+    page.drawText('CHUC DANH', { x: 175, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
+    page.drawText('DOANH NGHIEP', { x: 255, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
+    page.drawText('THOI GIAN CHECK-IN', { x: 385, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
+    page.drawText('TRANG THAI', { x: 495, y: currentY, size: 8, font: boldFont, color: pdfRgb(0, 0.357, 0.675) });
 
     currentY -= 8;
     page.drawLine({
@@ -4835,18 +4910,38 @@ export class EventsService implements OnModuleInit {
       );
     }
 
-    const events = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
-    `.catch(() => []);
-    if (!events.length) {
+    // Tìm sự kiện theo eventId hoặc fallback sự kiện Viện Doanh Trí
+    let targetEvent: any = null;
+    if (eventId && eventId !== 'all') {
+      const events = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
+      `.catch(() => []);
+      if (events.length) targetEvent = events[0];
+    }
+    if (!targetEvent) {
+      const dtFound = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events 
+        WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
+        ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+      if (dtFound.length) targetEvent = dtFound[0];
+    }
+    if (!targetEvent) {
+      const anyEvent = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+      if (anyEvent.length) targetEvent = anyEvent[0];
+    }
+    if (!targetEvent) {
       throw new NotFoundException('Không tìm thấy sự kiện');
     }
-    const event = events[0];
-    const eventName = event.name || event.title;
+    const event = targetEvent;
+    const resolvedEventId = event.id;
+    const eventName = event.name || event.title || 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ';
 
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
-      WHERE event_id = ${eventId} AND status != 'cancelled'
+      WHERE event_id = ${resolvedEventId} AND status != 'cancelled'
       ORDER BY registered_at DESC, created_at DESC
     `.catch(() => []);
 
@@ -4938,18 +5033,38 @@ export class EventsService implements OnModuleInit {
     eventId: string,
     format: 'excel' | 'word' | 'pdf' = 'excel',
   ) {
-    const events = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.events WHERE id = ${eventId} LIMIT 1
-    `.catch(() => []);
-    if (!events.length) {
+    // Tìm sự kiện theo eventId hoặc fallback sự kiện Viện Doanh Trí
+    let targetEvent: any = null;
+    if (eventId && eventId !== 'all') {
+      const events = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
+      `.catch(() => []);
+      if (events.length) targetEvent = events[0];
+    }
+    if (!targetEvent) {
+      const dtFound = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events 
+        WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
+        ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+      if (dtFound.length) targetEvent = dtFound[0];
+    }
+    if (!targetEvent) {
+      const anyEvent = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.events ORDER BY created_at DESC LIMIT 1
+      `.catch(() => []);
+      if (anyEvent.length) targetEvent = anyEvent[0];
+    }
+    if (!targetEvent) {
       throw new NotFoundException('Không tìm thấy sự kiện');
     }
-    const event = events[0];
-    const eventName = event.name || event.title;
+    const event = targetEvent;
+    const resolvedEventId = event.id;
+    const eventName = event.name || event.title || 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ';
 
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
-      WHERE event_id = ${eventId} AND status != 'cancelled'
+      WHERE event_id = ${resolvedEventId} AND status != 'cancelled'
       ORDER BY registered_at DESC, created_at DESC
     `.catch(() => []);
 

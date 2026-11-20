@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Mail,
   X,
@@ -12,6 +12,7 @@ import {
   Sparkles,
   Download,
   FileCheck,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchNestApi } from "@/lib/api-client";
@@ -21,6 +22,7 @@ interface EventSendCheckinExcelModalProps {
   onClose: () => void;
   eventId: string;
   eventName: string;
+  events?: Array<{ id: string; name?: string; title?: string }>;
   totalAttendees?: number;
 }
 
@@ -29,15 +31,36 @@ export function EventSendCheckinExcelModal({
   onClose,
   eventId,
   eventName,
+  events = [],
   totalAttendees = 0,
 }: EventSendCheckinExcelModalProps) {
+  const [selectedEventId, setSelectedEventId] = useState<string>(
+    eventId && eventId !== "all" ? eventId : "event-doanhtri-20261121"
+  );
   const [email, setEmail] = useState("");
   const [selectedFormat, setSelectedFormat] = useState<"all" | "excel" | "word" | "pdf">("all");
   const [sending, setSending] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (eventId && eventId !== "all") {
+      setSelectedEventId(eventId);
+    } else if (events && events.length > 0) {
+      const dt = events.find(
+        (e) =>
+          e.id === "event-doanhtri-20261121" ||
+          (e.name && e.name.toLowerCase().includes("doanh trí")) ||
+          (e.title && e.title.toLowerCase().includes("doanh trí"))
+      );
+      setSelectedEventId(dt ? dt.id : events[0].id);
+    }
+  }, [eventId, events]);
+
   if (!open) return null;
+
+  const currentEvent = events.find((e) => e.id === selectedEventId);
+  const currentEventName = currentEvent?.name || currentEvent?.title || eventName || "Kỷ niệm 4 năm Viện Doanh Trí";
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +72,9 @@ export function EventSendCheckinExcelModal({
 
     setSending(true);
     try {
+      const targetId = selectedEventId || eventId || "event-doanhtri-20261121";
       const res = await fetchNestApi<any>(
-        `/events/${eventId}/send-checkin-report-email`,
+        `/events/${targetId}/send-checkin-report-email`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -80,7 +104,8 @@ export function EventSendCheckinExcelModal({
   const handleDirectDownload = async (fmt: "excel" | "word" | "pdf") => {
     setDownloading(fmt);
     try {
-      const res = await fetch(`/api/events/${eventId}/export-checkin-file?format=${fmt}`, {
+      const targetId = selectedEventId || eventId || "event-doanhtri-20261121";
+      const res = await fetch(`/api/events/${targetId}/export-checkin-file?format=${fmt}`, {
         method: "GET",
       });
       if (!res.ok) throw new Error("Tải file thất bại");
@@ -109,14 +134,14 @@ export function EventSendCheckinExcelModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-        {/* Header Viện Doanh Trí */}
-        <div className="bg-gradient-to-r from-[#7A0000] via-[#8B0000] to-[#991b1b] px-6 py-4 text-white flex items-center justify-between">
+        {/* Header Viện Doanh Trí (Chuẩn nhận diện thương hiệu Xanh dương - Xanh lá) */}
+        <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-[#7A0000] flex items-center justify-center font-black text-sm shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/50 text-white flex items-center justify-center font-black text-sm shadow-sm">
               DT
             </div>
             <div>
-              <div className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">
+              <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
                 VIỆN DOANH TRÍ
               </div>
               <h3 className="text-sm font-bold text-white">Xuất & Gửi Danh Sách Check-in</h3>
@@ -145,14 +170,39 @@ export function EventSendCheckinExcelModal({
         ) : (
           <form onSubmit={handleSend} className="p-6 space-y-4">
             {/* Info Box */}
-            <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-1">
+            <div className="text-xs text-slate-600 leading-relaxed bg-sky-50/70 border border-sky-200 p-3.5 rounded-2xl space-y-1">
               <p className="font-semibold text-slate-800 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <Sparkles className="w-3.5 h-3.5 text-[#00A859]" />
                 Hỗ trợ đầy đủ 3 định dạng: Word, PDF, Excel
               </p>
-              <p className="text-[11px] text-slate-500">
-                Tất cả các file đều có cột Thời gian check-in chi tiết, phân loại Đúng giờ (trong 30 phút đầu) vs Check-in muộn, và màu sắc trình bày trang nhã, chuyên nghiệp.
+              <p className="text-[11px] text-slate-600">
+                Tất cả các file đều có cột Thời gian check-in chi tiết, phân loại Đúng giờ (trong 30 phút đầu) vs Check-in muộn, và header tiêu đề trang trọng của Viện Doanh Trí.
               </p>
+            </div>
+
+            {/* Event Selector Dropdown */}
+            <div className="space-y-1.5 text-left">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-[#005BAC]" />
+                Chọn sự kiện cần xuất / gửi báo cáo check-in: <span className="text-[#005BAC]">*</span>
+              </label>
+              {events && events.length > 0 ? (
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-xs font-semibold text-slate-800 bg-white shadow-sm"
+                >
+                  {events.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name || ev.title || ev.id}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 truncate">
+                  {currentEventName}
+                </div>
+              )}
             </div>
 
             {/* Format Selection Pills */}
@@ -166,7 +216,7 @@ export function EventSendCheckinExcelModal({
                   onClick={() => setSelectedFormat("all")}
                   className={`p-2 rounded-xl text-xs font-bold border transition flex flex-col items-center gap-1 cursor-pointer ${
                     selectedFormat === "all"
-                      ? "bg-[#8B0000] text-white border-[#8B0000] shadow-sm"
+                      ? "bg-[#005BAC] text-white border-[#005BAC] shadow-sm"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
@@ -225,7 +275,7 @@ export function EventSendCheckinExcelModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="bantieptan@doanhtri.vn, daibieu@company.vn..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -279,7 +329,7 @@ export function EventSendCheckinExcelModal({
               <button
                 type="submit"
                 disabled={sending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#8B0000] to-[#991b1b] hover:from-[#700000] hover:to-[#8B0000] text-white text-xs font-bold shadow-md disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e] text-white text-xs font-bold shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {sending ? (
                   <>
