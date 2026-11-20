@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Sparkles,
   FileSpreadsheet,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,6 +33,7 @@ import { PageHeader, Pill, StatCard, TableShell } from "@/components/dashboard/P
 import { useTableControls } from "@/hooks/use-table-controls";
 import { fetchNestApi } from "@/lib/api-client";
 import { getQrUrl } from "@/lib/qr";
+import { exportToExcel } from "@/lib/excel-export";
 import { Pagination } from "@/components/dashboard/DataTablePagination";
 import {
   addEventAttendeeFn,
@@ -49,6 +51,8 @@ import { EventReminderPosterModal } from "@/components/dashboard/EventReminderPo
 import { EventPosterStudioModal } from "@/components/dashboard/EventPosterStudioModal";
 import { VnpayPaymentModal } from "@/components/common/VnpayPaymentModal";
 import { EventGuestExcelImportModal } from "@/components/dashboard/EventGuestExcelImportModal";
+import { EventCheckinQrModal } from "@/components/events/EventCheckinQrModal";
+import { EventSendCheckinExcelModal } from "@/components/events/EventSendCheckinExcelModal";
 
 export const Route = createFileRoute("/event-registrations")({
   ssr: false,
@@ -143,6 +147,12 @@ function RegPage() {
   const [eventId, setEventId] = useState("all");
   const [status, setStatus] = useState<Registration["status"] | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
+  const [checkinFilter, setCheckinFilter] = useState<"all" | "on_time" | "late" | "not_checked_in">("all");
+
+  // QR Checkin and Excel Email modal states
+  const [checkinQrModalOpen, setCheckinQrModalOpen] = useState(false);
+  const [sendExcelModalOpen, setSendExcelModalOpen] = useState(false);
+  const [selectedQrEvent, setSelectedQrEvent] = useState<any>(null);
 
   // Excel-like resizable columns state & handler
   const [colWidths, setColWidths] = useState<Record<string, number>>({
@@ -265,15 +275,30 @@ function RegPage() {
         if (paymentFilter === "all") return true;
         return (r.paymentStatus || "pending") === paymentFilter;
       })
+      .filter((r) => {
+        if (checkinFilter === "all") return true;
+        if (checkinFilter === "on_time") {
+          return (r as any).checkinStatus === "on_time" || (r.checkedInAt && !(r as any).checkinStatus);
+        }
+        if (checkinFilter === "late") {
+          return (r as any).checkinStatus === "late";
+        }
+        if (checkinFilter === "not_checked_in") {
+          return !r.checkedInAt;
+        }
+        return true;
+      })
       .filter(
         (r) =>
           !ql ||
           r.memberName.toLowerCase().includes(ql) ||
           r.memberCode.toLowerCase().includes(ql) ||
           r.email.toLowerCase().includes(ql) ||
+          ((r as any).company && (r as any).company.toLowerCase().includes(ql)) ||
+          ((r as any).position && (r as any).position.toLowerCase().includes(ql)) ||
           (r.seatAssignment && r.seatAssignment.toLowerCase().includes(ql)),
       );
-  }, [q, eventId, status, paymentFilter, REGISTRATIONS]);
+  }, [q, eventId, status, paymentFilter, checkinFilter, REGISTRATIONS]);
 
   const tc = useTableControls<Registration>(
     filtered,
@@ -673,13 +698,145 @@ function RegPage() {
     setQrModalOpen(true);
   };
 
+  const handleOpenCheckinQrModal = () => {
+    const target =
+      EVENTS.find((e: any) => e.id === eventId) ||
+      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
+      EVENTS[0];
+    setSelectedQrEvent(target);
+    setCheckinQrModalOpen(true);
+  };
+
+  const handleOpenSendExcelModal = () => {
+    const target =
+      EVENTS.find((e: any) => e.id === eventId) ||
+      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
+      EVENTS[0];
+    setSelectedQrEvent(target);
+    setSendExcelModalOpen(true);
+  };
+
+  const handleExportCheckinExcel = () => {
+    const targetEvent =
+      EVENTS.find((e: any) => e.id === eventId) ||
+      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
+      EVENTS[0];
+    const dataToExport = filtered;
+    if (dataToExport.length === 0) {
+      toast.error("Không có dữ liệu đại biểu để xuất Excel!");
+      return;
+    }
+
+    exportToExcel<Registration>({
+      title: `DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN SỰ KIỆN`,
+      subtitle: `${targetEvent?.name || "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027"}`,
+      filename: `danh-sach-checkin-${eventId !== "all" ? eventId : "all"}-${Date.now()}`,
+      sheetName: "Danh_Sach_CheckIn",
+      data: dataToExport,
+      columns: [
+        { header: "STT", key: "stt", width: 8, value: (_, i) => String(i + 1) },
+        { header: "Mã Đăng Ký", key: "id", width: 18, value: (r) => r.id },
+        { header: "Họ và Tên Đại Biểu", key: "memberName", width: 26, value: (r) => r.memberName },
+        { header: "Email", key: "email", width: 28, value: (r) => r.email || "—" },
+        { header: "Chức Danh", key: "position", width: 20, value: (r) => (r as any).position || "—" },
+        { header: "Công Ty / Doanh Nghiệp", key: "company", width: 30, value: (r) => (r as any).company || "—" },
+        { header: "Số Điện Thoại", key: "phone", width: 16, value: (r) => (r as any).phone || "—" },
+        {
+          header: "Thời Gian Check-in",
+          key: "checkedInAt",
+          width: 22,
+          value: (r) =>
+            r.checkedInAt
+              ? new Date(r.checkedInAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+              : "Chưa check-in",
+        },
+        {
+          header: "Phân Loại Check-in",
+          key: "checkinStatus",
+          width: 24,
+          value: (r) =>
+            (r as any).checkinStatus === "on_time"
+              ? "Đúng giờ (trong 30p)"
+              : (r as any).checkinStatus === "late"
+              ? "Check-in muộn (>30p)"
+              : r.checkedInAt
+              ? "Đã điểm danh"
+              : "Chưa điểm danh",
+        },
+        { header: "Hạng Vé", key: "ticketType", width: 16, value: (r) => r.ticketType || "Vé Mời" },
+      ],
+      summaryRows: [
+        [
+          "TỔNG CỘNG ĐẠI BIỂU:",
+          "",
+          `${dataToExport.length} người`,
+          "",
+          "",
+          "",
+          "",
+          `Đã check-in: ${dataToExport.filter((r) => r.checkedInAt).length}`,
+          `Đúng giờ: ${dataToExport.filter((r) => (r as any).checkinStatus === "on_time").length} | Muộn: ${dataToExport.filter((r) => (r as any).checkinStatus === "late").length}`,
+          "",
+        ],
+      ],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "VIỆN DOANH TRÍ"],
+    });
+    toast.success(`Đã xuất thành công file Excel cho ${dataToExport.length} đại biểu!`);
+  };
+
+  const onTimeCheckinCount = useMemo(() => {
+    return REGISTRATIONS.filter(
+      (r) =>
+        (r as any).checkinStatus === "on_time" ||
+        (r.checkedInAt && !(r as any).checkinStatus)
+    ).length;
+  }, [REGISTRATIONS]);
+
+  const lateCheckinCount = useMemo(() => {
+    return REGISTRATIONS.filter((r) => (r as any).checkinStatus === "late").length;
+  }, [REGISTRATIONS]);
+
+  const notCheckedInCount = useMemo(() => {
+    return REGISTRATIONS.filter((r) => !r.checkedInAt).length;
+  }, [REGISTRATIONS]);
+
   return (
     <AppShell>
       <PageHeader
         title="Quản Lý Đăng Ký & Xếp Chỗ Sự Kiện"
         subtitle="Quản lý danh sách tham dự, sơ đồ chỗ ngồi và theo dõi thanh toán sự kiện"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Nút bật mã QR Check-in Viện Doanh Trí (Zalo) */}
+            <button
+              onClick={handleOpenCheckinQrModal}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#8B0000] via-[#A52A2A] to-[#991b1b] hover:from-[#750000] hover:to-[#8B0000] px-3.5 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer"
+              title="Mở mã QR Check-in điểm danh để khách mời quét bằng Zalo hoặc Camera điện thoại"
+            >
+              <QrCode className="h-4 w-4 text-amber-300" />
+              <span>Mã QR Check-in (Zalo)</span>
+            </button>
+
+            {/* Nút Xuất Excel Danh sách Check-in */}
+            <button
+              onClick={handleExportCheckinExcel}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Xuất file Excel danh sách khách mời kèm phân loại check-in Đúng giờ vs Muộn"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Xuất Excel Check-in</span>
+            </button>
+
+            {/* Nút Gửi Excel về Email */}
+            <button
+              onClick={handleOpenSendExcelModal}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              title="Gửi file Excel danh sách check-in trực tiếp về email mong muốn"
+            >
+              <Mail className="h-4 w-4" />
+              <span>Gửi Excel về Mail</span>
+            </button>
+
             <button
               onClick={() => setPosterStudioOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-xs transition cursor-pointer"
@@ -713,15 +870,11 @@ function RegPage() {
             </button>
             <button
               onClick={() => setGuestExcelModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
               title="Nhập danh sách khách mời từ file Excel và tự động gửi email thư mời sự kiện"
             >
               <FileSpreadsheet className="h-4 w-4" />
-              <span>Nhập Excel Khách Mời &amp; Gửi Mail</span>
-            </button>
-            <button className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 transition cursor-pointer">
-              <Download className="h-4 w-4 text-slate-500" />
-              <span>Xuất Báo Cáo</span>
+              <span>Nhập Excel Khách Mời</span>
             </button>
           </div>
         }
@@ -783,6 +936,68 @@ function RegPage() {
           <div className="text-slate-500 dark:text-slate-400 text-xs">
             Vé hợp lệ và sẵn sàng check-in
           </div>
+        </div>
+      </div>
+
+      {/* ── THANH FILTER TABS PHÂN LOẠI CHECK-IN (ĐÚNG GIỜ TRONG 30P / MUỘN) ── */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 p-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2">
+            Phân Loại Check-in:
+          </span>
+          <button
+            onClick={() => setCheckinFilter("all")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              checkinFilter === "all"
+                ? "bg-[#8B0000] text-white shadow-xs"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            }`}
+          >
+            Tất cả ({REGISTRATIONS.length})
+          </button>
+          <button
+            onClick={() => setCheckinFilter("on_time")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              checkinFilter === "on_time"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/40"
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>✓ Đúng giờ (trong 30p): {onTimeCheckinCount}</span>
+          </button>
+          <button
+            onClick={() => setCheckinFilter("late")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              checkinFilter === "late"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "text-amber-700 bg-amber-50 hover:bg-amber-100 dark:text-amber-300 dark:bg-amber-950/40"
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-500" />
+            <span>⏱ Check-in muộn (&gt;30p): {lateCheckinCount}</span>
+          </button>
+          <button
+            onClick={() => setCheckinFilter("not_checked_in")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              checkinFilter === "not_checked_in"
+                ? "bg-slate-700 text-white shadow-xs"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            }`}
+          >
+            <span>Chưa đến: {notCheckedInCount}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 pr-1">
+          <button
+            onClick={handleExportCheckinExcel}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer shadow-2xs"
+            title="Xuất file Excel danh sách đang hiển thị"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Tải Excel</span>
+          </button>
         </div>
       </div>
 
@@ -1098,13 +1313,40 @@ function RegPage() {
                       style={{ width: colWidths.checkin, minWidth: colWidths.checkin }}
                       className="px-4 py-3 border-b border-border/50 whitespace-nowrap"
                     >
-                      {r.checkedInAt ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Đã check-in
-                        </span>
+                      {r.checkinStatus === "on_time" || (r.checkedInAt && !r.checkinStatus) ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 w-fit">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                            Đúng giờ (30p)
+                          </span>
+                          {r.checkedInAt && (
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(r.checkedInAt).toLocaleTimeString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      ) : r.checkinStatus === "late" ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 w-fit">
+                            <Clock className="h-3 w-3 text-amber-600" />
+                            Muộn (&gt;30p)
+                          </span>
+                          {r.checkedInAt && (
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(r.checkedInAt).toLocaleTimeString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Chưa đến</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                          Chưa check-in
+                        </span>
                       )}
                     </td>
 
@@ -1770,6 +2012,26 @@ function RegPage() {
           router.invalidate();
         }}
       />
+
+      {/* Modal Quét QR Check-in Điểm Danh Zalo / Camera */}
+      {checkinQrModalOpen && selectedQrEvent && (
+        <EventCheckinQrModal
+          open={checkinQrModalOpen}
+          onClose={() => setCheckinQrModalOpen(false)}
+          event={selectedQrEvent}
+        />
+      )}
+
+      {/* Modal Gửi File Excel Danh Sách Check-in qua Email */}
+      {sendExcelModalOpen && selectedQrEvent && (
+        <EventSendCheckinExcelModal
+          open={sendExcelModalOpen}
+          onClose={() => setSendExcelModalOpen(false)}
+          eventId={selectedQrEvent.id}
+          eventName={selectedQrEvent.name || selectedQrEvent.title || "Sự kiện Viện Doanh Trí"}
+          totalAttendees={REGISTRATIONS.length}
+        />
+      )}
     </AppShell>
   );
 }

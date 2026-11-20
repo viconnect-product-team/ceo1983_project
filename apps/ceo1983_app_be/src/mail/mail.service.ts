@@ -150,6 +150,20 @@ export interface SendConnectionAppointmentEmailOptions {
   portalUrl?: string;
 }
 
+export interface SendDoanhTriCheckinSuccessEmailOptions {
+  to: string;
+  fullName: string;
+  position?: string;
+  company?: string;
+  eventTitle: string;
+  eventDate?: string;
+  eventTime?: string;
+  eventLocation?: string;
+  checkedInAt: string;
+  checkinStatus: 'on_time' | 'late' | string;
+  hotline?: string;
+}
+
 export interface SendEventPaymentSuccessEmailOptions {
   to: string;
   fullName: string;
@@ -3402,6 +3416,241 @@ export class MailService {
       html,
       fromName: 'CLB Doanh Nhân CEO 1983',
       auditContext: `[LUCKY_DRAW_WINNER] ${winnerName} (${cleanTo}) - Prize: ${prizeTitle}`,
+    });
+  }
+
+  /**
+   * Gửi email xác nhận check-in thành công thuộc về Viện Doanh Trí
+   * Kỷ niệm 4 năm Viện Doanh Trí & Toạ đàm Doanh Nghiệp Việt 2027
+   */
+  async sendDoanhTriCheckinSuccessEmail(
+    options: SendDoanhTriCheckinSuccessEmailOptions,
+  ): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      fullName,
+      position = 'Đại biểu',
+      company = 'Doanh nghiệp',
+      eventTitle,
+      eventDate = '21/11/2026',
+      eventTime = '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
+      eventLocation = 'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+      checkedInAt,
+      checkinStatus,
+      hotline = '0988.870.888 / 0903.203.204',
+    } = options;
+
+    const cleanTo = (to || '').trim().toLowerCase();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      return { ok: false, message: 'Invalid recipient email' };
+    }
+
+    const isOnTime = checkinStatus === 'on_time';
+    const statusLabel = isOnTime
+      ? '✓ Điểm danh đúng giờ (trong 30 phút)'
+      : '⏱ Điểm danh sau 30 phút (Check-in muộn)';
+    const statusColor = isOnTime ? '#16a34a' : '#d97706';
+    const statusBg = isOnTime ? '#f0fdf4' : '#fffbeb';
+    const statusBorder = isOnTime ? '#bbf7d0' : '#fde68a';
+
+    const subject = `[Viện Doanh Trí] Cảm ơn Anh/Chị ${fullName} đã check-in thành công - Kỷ niệm 4 năm Viện Doanh Trí`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác nhận Check-in - Viện Doanh Trí</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #8B0000 0%, #B22222 50%, #991b1b 100%); color: #ffffff; padding: 36px 30px 28px; text-align: center; position: relative; }
+    .header-badge { display: inline-block; background: rgba(255,215,0,0.2); border: 1px solid #FFD700; color: #FFD700; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 12px; }
+    .header h1 { margin: 0 0 6px; font-size: 21px; font-weight: 900; line-height: 1.3; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; }
+    .header p { margin: 0; font-size: 13px; color: #fecdd3; font-weight: 500; }
+    .content { padding: 32px 30px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
+    .intro-text { font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 22px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; margin-bottom: 22px; width: 100%; box-sizing: border-box; }
+    .ticket-card { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #8B0000; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #64748b; font-weight: 500; }
+    .info-value { color: #0f172a; font-weight: 700; text-align: right; max-width: 65%; }
+    .agenda-card { background: #fff5f5; border: 1px solid #fecdd3; border-radius: 14px; padding: 16px 20px; font-size: 13px; color: #991b1b; line-height: 1.6; margin-bottom: 24px; }
+    .footer { background: #0f172a; color: #94a3b8; padding: 26px 30px; text-align: center; font-size: 12px; line-height: 1.6; }
+    .footer strong { color: #f1f5f9; }
+    .footer a { color: #FFD700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-badge">VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM</div>
+      <h1>XÁC NHẬN CHECK-IN THÀNH CÔNG</h1>
+      <p>Tri ân Ngày Nhà Giáo Việt Nam 20/11 & Toạ đàm Doanh Nghiệp Việt 2027</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">Kính gửi Anh/Chị: <strong style="color: #8B0000;">${fullName}</strong>,</div>
+      
+      <p class="intro-text">
+        <strong>Viện Doanh Trí</strong> xin trân trọng cảm ơn Anh/Chị đã có mặt và hoàn tất thủ tục check-in tham dự chương trình toạ đàm đặc biệt hôm nay. Chúc Anh/Chị có một buổi giao lưu, kết nối và đón nhận nhiều giá trị hữu ích!
+      </p>
+
+      <div class="status-badge">
+        ${statusLabel}
+      </div>
+
+      <div class="ticket-card">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #8B0000; margin-bottom: 12px;">
+          THÔNG TIN KHÁCH MỜI ĐIỂM DANH
+        </div>
+        <div class="info-row">
+          <span class="info-label">Khách mời / Đại biểu:</span>
+          <span class="info-value">${fullName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Chức danh:</span>
+          <span class="info-value">${position || 'Khách mời'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Công ty / Doanh nghiệp:</span>
+          <span class="info-value">${company || 'Doanh nghiệp'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Thời điểm check-in:</span>
+          <span class="info-value" style="color: ${statusColor};">${checkedInAt}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Sự kiện:</span>
+          <span class="info-value">${eventTitle}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Thời gian tổ chức:</span>
+          <span class="info-value">${eventDate} (${eventTime})</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Địa điểm:</span>
+          <span class="info-value">${eventLocation}</span>
+        </div>
+      </div>
+
+      <div class="agenda-card">
+        <strong>🗓 LỊCH TRÌNH CHƯƠNG TRÌNH:</strong><br/>
+        • <strong>14h30 - 17h30:</strong> Toạ đàm “Doanh nghiệp Việt 2027: Củng cố nội lực - Kết nối - Tạo đà tăng trưởng” (Dòng tiền - Năng suất thực - Thị trường trong kỷ nguyên AI)<br/>
+        • <strong>18h00 - 22h00:</strong> Tiệc chúc mừng sinh nhật Viện Doanh Trí tròn 4 năm & Tri ân Ngày Nhà Giáo Việt Nam 20/11
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 0;">
+        ☎ <strong>Hotline hỗ trợ Ban Tổ Chức:</strong> <span style="color: #8B0000; font-weight: 700;">${hotline}</span>
+      </p>
+    </div>
+
+    <div class="footer">
+      <div><strong>VIỆN DOANH TRÍ</strong></div>
+      <div>Đồng hành cùng Doanh nghiệp Việt Nam phát triển bền vững</div>
+      <div style="margin-top: 6px;">Hotline: ${hotline} · Cổng liên kết: <a href="https://ceo1983.viconnect.vn">ceo1983.viconnect.vn</a></div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Viện Doanh Trí',
+      auditContext: `[DOANH_TRI_CHECKIN] ${fullName} (${cleanTo}) - Status: ${checkinStatus}`,
+    });
+  }
+
+  /**
+   * Gửi danh sách check-in sự kiện đính kèm file Excel về email cụ thể
+   */
+  async sendCheckinListExcelEmail(options: {
+    to: string;
+    eventName: string;
+    excelBuffer: Buffer;
+    filename: string;
+    totalAttendees: number;
+    onTimeCount: number;
+    lateCount: number;
+  }): Promise<{ ok: boolean; message?: string }> {
+    const {
+      to,
+      eventName,
+      excelBuffer,
+      filename,
+      totalAttendees,
+      onTimeCount,
+      lateCount,
+    } = options;
+
+    const cleanTo = (to || '').trim().toLowerCase();
+    if (!cleanTo || !cleanTo.includes('@')) {
+      return { ok: false, message: 'Invalid destination email' };
+    }
+
+    const subject = `[Báo Cáo Viện Doanh Trí] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
+    const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 24px; color: #1e293b; }
+    .box { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 30px; border: 1px solid #e2e8f0; }
+    .stat { display: inline-block; padding: 12px 18px; margin: 6px; border-radius: 10px; background: #f1f5f9; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2 style="color: #8B0000; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
+    <p>Kính gửi Ban Tổ Chức / Quản Trị Viên,</p>
+    <p>Hệ thống trân trọng gửi đính kèm file Excel danh sách khách mời đã thực hiện quét mã QR check-in tại sự kiện:</p>
+    <div style="background: #fff5f5; border-left: 4px solid #8B0000; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #991b1b;">
+      ${eventName}
+    </div>
+    <div style="margin: 20px 0;">
+      <div class="stat">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Tổng Đại Biểu</div>
+        <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${totalAttendees}</div>
+      </div>
+      <div class="stat" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+        <div style="font-size: 11px; color: #16a34a; text-transform: uppercase;">Đúng Giờ (Trong 30p)</div>
+        <div style="font-size: 22px; font-weight: 900; color: #16a34a;">${onTimeCount}</div>
+      </div>
+      <div class="stat" style="background: #fffbeb; border: 1px solid #fde68a;">
+        <div style="font-size: 11px; color: #d97706; text-transform: uppercase;">Check-in Muộn (&gt;30p)</div>
+        <div style="font-size: 22px; font-weight: 900; color: #d97706;">${lateCount}</div>
+      </div>
+    </div>
+    <p>File đính kèm: <strong>${filename}</strong></p>
+    <p style="font-size: 12px; color: #64748b; margin-top: 30px;">
+      Báo cáo được trích xuất tự động thời gian thực từ Cổng Quản Trị CRM CEO 1983 & Viện Doanh Trí.
+    </p>
+  </div>
+</body>
+</html>
+    `;
+
+    return this.dispatchSmtpEmail({
+      to: cleanTo,
+      subject,
+      html,
+      fromName: 'Ban Tổ Chức Viện Doanh Trí',
+      auditContext: `[EXCEL_REPORT] ${eventName} sent to ${cleanTo}`,
+      attachments: [
+        {
+          filename,
+          content: excelBuffer,
+          contentType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
     });
   }
 }

@@ -210,6 +210,31 @@ export class EventsController {
     return this.eventsService.guestRegister(id, body);
   }
 
+  /**
+   * Check-in sự kiện công khai dành cho khách quét mã QR Zalo hoặc ứng dụng khác
+   * Yêu cầu các trường: Tên, email, chức danh, công ty
+   * Phân loại: tối thiểu trong 30 phút là đúng giờ ('on_time'), sau 30 phút là muộn ('late')
+   * Lập tức gửi email xác nhận thuộc Viện Doanh Trí về email người tham dự
+   */
+  @Post(':id/public-checkin')
+  async publicCheckin(@Param('id') id: string, @Body() body: any) {
+    return this.eventsService.publicCheckin(id, body);
+  }
+
+  /**
+   * Xuất và gửi file Excel danh sách khách mời đã check-in về email được chỉ định
+   */
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post(':id/send-checkin-excel-email')
+  async sendCheckinExcelEmail(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('targetEmail') targetEmail: string,
+  ) {
+    const userId = req.user?.id || 'admin';
+    return this.eventsService.sendCheckinExcelEmail(userId, id, targetEmail);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post(':id/cancel')
   async cancelEventRegistration(
