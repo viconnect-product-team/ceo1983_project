@@ -1,5 +1,35 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.92): Hoàn Thiện Bộ Nhận Diện Banner Kỷ Niệm 4 Năm Viện Doanh Trí (Ảnh 1), Khắc Phục Triệt Để Lỗi SSL Localhost (Ảnh 2) & Tách Biệt Hoàn Toàn Trang Quay Thưởng Landing Web Sân Khấu Gala Độc Lập (Ảnh 3) ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa Bộ Nhận Diện Thương Hiệu Viện Doanh Trí Theo Ảnh 1 (`VienDoanhTriBrandBanner.tsx`)**:
+    * **Đồ Họa & Bố Cục**:
+      - Bên trái: Cụm từ `CHƯƠNG TRÌNH / KỶ NIỆM` màu xanh navy `#0A2540`, in hoa đậm nét, căn phải.
+      - Vạch ngăn đứng thanh lịch màu xám xanh hoặc ánh vàng.
+      - Điểm nhấn trung tâm: Số `4` khổng lồ đổ màu chuyển sắc (gradient) từ xanh lá cây tươi `#22C55E` xuống xanh lục đậm `#16A34A` và `#15803D`.
+      - Bên phải: Dòng 1 `NĂM THÀNH LẬP / VIỆN DOANH TRÍ` màu xanh navy đậm `#003B73` / `#002B62` to và trang trọng. Dòng 2 `& TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11` màu xanh lá mạ `#008A44` thanh lịch.
+    * **Áp dụng đồng bộ**:
+      - Form Check-in công khai (`/checkin/:eventId`): Hiển thị ở đỉnh form check-in kèm thời gian (14h30 - 17h30, Thứ 7, 21/11/2026) và địa điểm (Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy).
+      - Modal Mã QR Check-in (`EventCheckinQrModal.tsx`): Tích hợp banner nhận diện trang nhã.
+      - Hero Section Trang Landing Web Quay Thưởng (`LuckyDrawLandingPage.tsx`): Phiên bản Dark theme ánh kim lung linh trên nền sân khấu toạ đàm.
+  - **2. Khắc Phục Triệt Để Lỗi SSL Protocol Error Trên Localhost (Ảnh 2)**:
+    * **Nguyên nhân lỗi `ERR_SSL_PROTOCOL_ERROR`**: Khi chạy môi trường dev cục bộ, máy chủ Vite chạy giao thức HTTP thuần trên cổng 5173. Khi người dùng truy cập hoặc click vào liên kết có tiền tố `https://localhost:5173/...`, trình duyệt cố gắng thực hiện bắt tay TLS trên cổng HTTP, dẫn đến lỗi giao thức SSL.
+    * **Giải pháp Adaptive URL Thông Minh trong `EventCheckinQrModal.tsx`**:
+      - Tự động nhận diện môi trường (`window.location.hostname`): Nếu là `localhost` hoặc `127.0.0.1`, hệ thống tự động ưu tiên tạo liên kết và mã QR dạng `http://${window.location.host}/checkin/${eventId}` để người dùng click hoặc test trên máy mở ra ngay mà không bao giờ gặp lỗi SSL.
+      - Bổ sung 2 Tab chuyển đổi rõ ràng:
+        1. 🌐 **Chính Thức (HTTPS Production)**: `https://crm.ceo1983.viconnect.vn/checkin/...` (dùng cho phông bạt, in ấn, đại biểu quét bằng 4G/Zalo).
+        2. 💻 **Test Localhost (HTTP)**: `http://localhost:5173/checkin/...` (dùng cho ban tổ chức test trực tiếp trên máy dev).
+      - Thêm ghi chú hướng dẫn trực quan ngăn chặn việc gõ nhầm `https://` trên localhost.
+  - **3. Tách Biệt Hoàn Toàn Trang Quay Thưởng Thành Landing Web Độc Lập Ngoài Hệ Thống (Ảnh 3)**:
+    * **Kiến Trúc Độc Lập 100%**:
+      - Trang quay thưởng tại route `/lucky-draw` và `/lucky-draw/:eventId` hoàn toàn không bị bọc bởi `<AppShell>`, không có sidebar hay topbar CRM, trở thành một Landing Web công chúng toàn màn hình chuyên nghiệp đẳng cấp quốc tế.
+      - Wrapper `LuckyDrawWheel.tsx` chuyển tiếp trực tiếp sang `LuckyDrawLandingPage`, đảm bảo dù đi từ Sidebar, Voting hay bất kỳ đâu cũng luôn mở trang Landing Web mới nhất.
+    * **Khắc Phục Triệt Để Lỗi Vẽ Vòng Quay Canvas**:
+      - Trường hợp 1 đại biểu: Vẽ đĩa tròn nguyên vẹn 360°, màu xanh ngọc Viện Doanh Trí `#00A859` - `#005BAC`, chữ tên đại biểu nằm ngang to rõ ở tâm, KHÔNG vẽ vạch bán kính chia đôi, chữ không bao giờ bị lộn ngược.
+      - Trường hợp nhiều đại biểu: Thuật toán tính góc chữ thông minh, đảm bảo chữ luôn đọc xuôi từ trái sang phải.
+    * **Đồng Bộ Dữ Liệu Hai Chiều CSDL 113.20.107.184:6432**:
+      - Danh sách giải thưởng và đại biểu check-in được đọc và ghi trực tiếp vào CSDL thật, xóa giải cũ biến mất ngay, thêm giải mới lưu ngay vào DB, cam kết không dùng dữ liệu mock.
+      - Bảng vinh danh đại biểu trúng thưởng nằm ngay dưới vòng quay với thanh cuộn mượt mà khi vượt quá 5 giải.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.91): Triệt Tiêu Dữ Liệu Hardcode Giải Thưởng, Đồng Bộ Hai Chiều CSDL 113.20.107.184:6432, Khắc Phục Lỗi Vẽ Vòng Quay 1 Người & Nâng Cấp Tùy Chỉnh Giao Diện Banner Nền Sân Khấu Hoành Tráng ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Triệt Tiêu Dữ Liệu Hardcode Giải Thưởng & Đồng Bộ Hai Chiều CSDL Thực Tế**:
     * **Phân tích nguyên nhân**:
