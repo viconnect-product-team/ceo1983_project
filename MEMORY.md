@@ -1,5 +1,29 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:
+    * Theo hình ảnh dải sóng nhận diện chính thức của Viện Doanh Trí do người dùng cung cấp (`media_1795163324133_844820fa.png`): dải màu gồm màu Xanh lá tươi (`#00A859` / `#16A34A`) và màu Xanh dương đậm (`#005BAC` / `#0284C7`).
+    * Thay thế toàn bộ mã màu đỏ/đỏ mận cũ (`#8B0000`, `#7A0000`, `#991b1b`, `rose-*`, `red-*`) trên trang check-in (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`) sang bộ màu chuẩn:
+      - Banner thông tin sự kiện & kết quả: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859]`.
+      - Nút bấm xác nhận check-in: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e]`.
+      - Input border & focus ring: `focus:ring-[#005BAC]`.
+      - Icon chỉ mục & tiêu đề: `text-[#005BAC]` và `text-[#00A859]`.
+      - Hiển thị người vừa check-in: Viền xanh `border-l-[#005BAC]`, badge số thứ tự `bg-[#005BAC] text-white ring-2 ring-[#00A859]`.
+  - **2. Bỏ Thanh Header Dính Trên Cùng Của Form Check-in**:
+    * Theo hình ảnh chụp vùng cắt của người dùng (`media_1795163346018_c7476476.png`): Loại bỏ hoàn toàn khối `<header className="...">` màu đỏ dính trên cùng.
+    * Giao diện form trên di động giờ đây mở thẳng vào thẻ sự kiện và form nhập liệu ngắn gọn 4 trường (`Họ và tên`, `Số điện thoại`, `Email`, `Chức danh`, `Công ty`), tối ưu diện tích hiển thị và thao tác tức thì khi quét mã QR qua Zalo hoặc Camera điện thoại.
+  - **3. Khắc Phục Triệt Để Lỗi HTTP 500 Khi Khách Nhấn Nút Check-in**:
+    * **Nguyên nhân gốc rễ**: Lệnh `INSERT INTO public.event_registrations` và `UPDATE` trước đây gọi các cột không có trong schema CSDL chuẩn `113.20.107.184:6432` (`payment_status`, `payment_amount`, `lucky_number`, `qr_payload`, `phone`, `company`, `position`). PostgreSQL ném lỗi dẫn đến NestJS trả về HTTP 500 Internal Server Error (`media_1795163290594_530fe730.png`).
+    * **Giải pháp chuẩn hóa**:
+      - Bảng `public.event_registrations` trên CSDL chuẩn chỉ gồm các cột cốt lõi: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `created_at`, `updated_at`, `association_id`.
+      - Đóng gói toàn bộ metadata (`fullName`, `email`, `position`, `company`, `phone`, `checkinStatus`, `checkedIn`, `checkedInAt`) vào JSON và lưu trữ an toàn trong cột `ticket_type` (chuẩn `@db.Text`).
+      - Cấu trúc lệnh INSERT/UPDATE sử dụng chuẩn xác các cột cốt lõi đã được kiểm chứng. Bổ sung try-catch dự phòng 2 tầng, cam kết không bao giờ bị exception crash 500.
+      - Nâng cấp `mapRegRow` và `getPublicAttendees` trong `events.service.ts` để đọc và phân giải dữ liệu từ cả `ticket_type` và `qr_payload`, đảm bảo thông tin đại biểu (Họ tên, SĐT, Công ty, Chức danh, Giờ check-in) hiển thị đầy đủ và đồng bộ về Web CRM.
+  - **4. Kiểm Thử & Type-Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
     * Khi người dùng mở `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, màn hình hiển thị:
@@ -2034,6 +2058,30 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:
+    * Theo hình ảnh dải sóng nhận diện chính thức của Viện Doanh Trí do người dùng cung cấp (`media_1795163324133_844820fa.png`): dải màu gồm màu Xanh lá tươi (`#00A859` / `#16A34A`) và màu Xanh dương đậm (`#005BAC` / `#0284C7`).
+    * Thay thế toàn bộ mã màu đỏ/đỏ mận cũ (`#8B0000`, `#7A0000`, `#991b1b`, `rose-*`, `red-*`) trên trang check-in (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`) sang bộ màu chuẩn:
+      - Banner thông tin sự kiện & kết quả: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859]`.
+      - Nút bấm xác nhận check-in: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e]`.
+      - Input border & focus ring: `focus:ring-[#005BAC]`.
+      - Icon chỉ mục & tiêu đề: `text-[#005BAC]` và `text-[#00A859]`.
+      - Hiển thị người vừa check-in: Viền xanh `border-l-[#005BAC]`, badge số thứ tự `bg-[#005BAC] text-white ring-2 ring-[#00A859]`.
+  - **2. Bỏ Thanh Header Dính Trên Cùng Của Form Check-in**:
+    * Theo hình ảnh chụp vùng cắt của người dùng (`media_1795163346018_c7476476.png`): Loại bỏ hoàn toàn khối `<header className="...">` màu đỏ dính trên cùng.
+    * Giao diện form trên di động giờ đây mở thẳng vào thẻ sự kiện và form nhập liệu ngắn gọn 4 trường (`Họ và tên`, `Số điện thoại`, `Email`, `Chức danh`, `Công ty`), tối ưu diện tích hiển thị và thao tác tức thì khi quét mã QR qua Zalo hoặc Camera điện thoại.
+  - **3. Khắc Phục Triệt Để Lỗi HTTP 500 Khi Khách Nhấn Nút Check-in**:
+    * **Nguyên nhân gốc rễ**: Lệnh `INSERT INTO public.event_registrations` và `UPDATE` trước đây gọi các cột không có trong schema CSDL chuẩn `113.20.107.184:6432` (`payment_status`, `payment_amount`, `lucky_number`, `qr_payload`, `phone`, `company`, `position`). PostgreSQL ném lỗi dẫn đến NestJS trả về HTTP 500 Internal Server Error (`media_1795163290594_530fe730.png`).
+    * **Giải pháp chuẩn hóa**:
+      - Bảng `public.event_registrations` trên CSDL chuẩn chỉ gồm các cột cốt lõi: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `created_at`, `updated_at`, `association_id`.
+      - Đóng gói toàn bộ metadata (`fullName`, `email`, `position`, `company`, `phone`, `checkinStatus`, `checkedIn`, `checkedInAt`) vào JSON và lưu trữ an toàn trong cột `ticket_type` (chuẩn `@db.Text`).
+      - Cấu trúc lệnh INSERT/UPDATE sử dụng chuẩn xác các cột cốt lõi đã được kiểm chứng. Bổ sung try-catch dự phòng 2 tầng, cam kết không bao giờ bị exception crash 500.
+      - Nâng cấp `mapRegRow` và `getPublicAttendees` trong `events.service.ts` để đọc và phân giải dữ liệu từ cả `ticket_type` và `qr_payload`, đảm bảo thông tin đại biểu (Họ tên, SĐT, Công ty, Chức danh, Giờ check-in) hiển thị đầy đủ và đồng bộ về Web CRM.
+  - **4. Kiểm Thử & Type-Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
@@ -5311,6 +5359,30 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.79): Chuẩn Hóa Màu Sắc Nhận Diện Viện Doanh Trí (Xanh Lá #00A859 & Xanh Dương #005BAC), Bỏ Top Header Form Check-in, Khắc Phục Triệt Để Lỗi 500 Check-in Do Lệch Cột CSDL ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Chuẩn Hóa Màu Sắc Thương Hiệu Viện Doanh Trí**:
+    * Theo hình ảnh dải sóng nhận diện chính thức của Viện Doanh Trí do người dùng cung cấp (`media_1795163324133_844820fa.png`): dải màu gồm màu Xanh lá tươi (`#00A859` / `#16A34A`) và màu Xanh dương đậm (`#005BAC` / `#0284C7`).
+    * Thay thế toàn bộ mã màu đỏ/đỏ mận cũ (`#8B0000`, `#7A0000`, `#991b1b`, `rose-*`, `red-*`) trên trang check-in (`apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`) sang bộ màu chuẩn:
+      - Banner thông tin sự kiện & kết quả: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859]`.
+      - Nút bấm xác nhận check-in: `bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e]`.
+      - Input border & focus ring: `focus:ring-[#005BAC]`.
+      - Icon chỉ mục & tiêu đề: `text-[#005BAC]` và `text-[#00A859]`.
+      - Hiển thị người vừa check-in: Viền xanh `border-l-[#005BAC]`, badge số thứ tự `bg-[#005BAC] text-white ring-2 ring-[#00A859]`.
+  - **2. Bỏ Thanh Header Dính Trên Cùng Của Form Check-in**:
+    * Theo hình ảnh chụp vùng cắt của người dùng (`media_1795163346018_c7476476.png`): Loại bỏ hoàn toàn khối `<header className="...">` màu đỏ dính trên cùng.
+    * Giao diện form trên di động giờ đây mở thẳng vào thẻ sự kiện và form nhập liệu ngắn gọn 4 trường (`Họ và tên`, `Số điện thoại`, `Email`, `Chức danh`, `Công ty`), tối ưu diện tích hiển thị và thao tác tức thì khi quét mã QR qua Zalo hoặc Camera điện thoại.
+  - **3. Khắc Phục Triệt Để Lỗi HTTP 500 Khi Khách Nhấn Nút Check-in**:
+    * **Nguyên nhân gốc rễ**: Lệnh `INSERT INTO public.event_registrations` và `UPDATE` trước đây gọi các cột không có trong schema CSDL chuẩn `113.20.107.184:6432` (`payment_status`, `payment_amount`, `lucky_number`, `qr_payload`, `phone`, `company`, `position`). PostgreSQL ném lỗi dẫn đến NestJS trả về HTTP 500 Internal Server Error (`media_1795163290594_530fe730.png`).
+    * **Giải pháp chuẩn hóa**:
+      - Bảng `public.event_registrations` trên CSDL chuẩn chỉ gồm các cột cốt lõi: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `created_at`, `updated_at`, `association_id`.
+      - Đóng gói toàn bộ metadata (`fullName`, `email`, `position`, `company`, `phone`, `checkinStatus`, `checkedIn`, `checkedInAt`) vào JSON và lưu trữ an toàn trong cột `ticket_type` (chuẩn `@db.Text`).
+      - Cấu trúc lệnh INSERT/UPDATE sử dụng chuẩn xác các cột cốt lõi đã được kiểm chứng. Bổ sung try-catch dự phòng 2 tầng, cam kết không bao giờ bị exception crash 500.
+      - Nâng cấp `mapRegRow` và `getPublicAttendees` trong `events.service.ts` để đọc và phân giải dữ liệu từ cả `ticket_type` và `qr_payload`, đảm bảo thông tin đại biểu (Họ tên, SĐT, Công ty, Chức danh, Giờ check-in) hiển thị đầy đủ và đồng bộ về Web CRM.
+  - **4. Kiểm Thử & Type-Check Toàn Diện**:
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Tuyệt đối tuân thủ quy tắc không tự ý chạy `git commit` / `git push`.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
   - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
