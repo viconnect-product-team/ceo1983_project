@@ -1,5 +1,35 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
+    * Khi người dùng mở `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, màn hình hiển thị:
+      - Title: "Quản Lý Điểm Danh & Check-in Độc Lập" kèm thanh Sidebar CRM ("Hiệp hội Doanh... Tổng quan, Trợ lý AI, Hội viên, Sự kiện...").
+      - Yêu cầu quyền Camera: "Camera not allowed" (do camera QR scanner của trang quản trị tự bật).
+      - Lỗi Console: `/api/events/event-doanhtri-20261121/attendees-preview: 404 Not Found` và WebSocket socket.io 400.
+    * **Cơ chế xung đột Route trong TanStack Router**:
+      - Trước đây, `apps/ceo1983_app_fe/src/routes/checkin.tsx` được viết nguyên khối 646 dòng chứa `UnifiedCheckinManagementPage` và đăng ký route `createFileRoute("/checkin")`. Nó **KHÔNG có component `<Outlet />`**.
+      - Theo quy ước định tuyến phân cấp của TanStack Router, khi tồn tại `checkin.tsx` và `checkin.$eventId.tsx`, `checkin.tsx` mặc nhiên trở thành Parent Layout Route của `/$eventId`.
+      - Khi truy cập `/checkin/event-doanhtri-20261121`, TanStack Router nạp `checkin.tsx` và render component quản trị, nuốt trọn và không bao giờ render file con `checkin.$eventId.tsx` (`PublicEventCheckinPage`)!
+  - **2. Giải Pháp Tái Cấu Trúc Tuyến Đường Chuẩn Mực TanStack Router**:
+    * **Tách layout và route index độc lập**:
+      - Chuyển `apps/ceo1983_app_fe/src/routes/checkin.tsx` thành Parent Layout Route thuần túy (giống mẫu `events.tsx`):
+        ```tsx
+        import { createFileRoute, Outlet } from "@tanstack/react-router";
+        export const Route = createFileRoute("/checkin")({
+          component: () => <Outlet />,
+        });
+        ```
+      - Di chuyển toàn bộ component quản trị `UnifiedCheckinManagementPage` sang `apps/ceo1983_app_fe/src/routes/checkin.index.tsx` và đăng ký `createFileRoute("/checkin/")`.
+      - Chạy lại generator: `node scripts/gen-routes.mjs` để cập nhật `routeTree.gen.ts`.
+    * **Kết quả định tuyến**:
+      - Khi khách quét mã QR truy cập `/checkin/event-doanhtri-20261121`: `CheckinRoute` nạp `<Outlet />` và hiển thị thẳng `CheckinEventIdRoute` (`PublicEventCheckinPage` - Form công khai Viện Doanh Trí không AppShell, không sidebar, không camera).
+      - Khi quản trị viên truy cập `/checkin`: `CheckinRoute` nạp `<Outlet />` và hiển thị `CheckinIndexRoute` (`UnifiedCheckinManagementPage` - Cổng quản trị điểm danh đầy đủ tính năng).
+    * **Bổ sung API Endpoint dự phòng**:
+      - Trong `events.controller.ts`, bổ sung `@Get(':id/attendees-preview')` ánh xạ sang `getPublicAttendees` để triệt tiêu hoàn toàn lỗi 404 nếu có bất kỳ thành phần nào gọi preview.
+  - **3. Kiểm Thử & Xác Nhận**:
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
     * Trong `apps/ceo1983_app_fe/src/routes/checkin.$eventId.tsx`, xóa bỏ toàn bộ chuỗi text và liên kết liên quan tới CEO 1983 (như `Cổng liên kết: ceo1983.viconnect.vn`). Thay bằng nhận diện chuyên nghiệp của Viện Doanh Trí kèm số Hotline hỗ trợ Ban Tổ Chức: `0988.870.888 / 0903.203.204`.
@@ -2004,6 +2034,36 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
+    * Khi người dùng mở `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, màn hình hiển thị:
+      - Title: "Quản Lý Điểm Danh & Check-in Độc Lập" kèm thanh Sidebar CRM ("Hiệp hội Doanh... Tổng quan, Trợ lý AI, Hội viên, Sự kiện...").
+      - Yêu cầu quyền Camera: "Camera not allowed" (do camera QR scanner của trang quản trị tự bật).
+      - Lỗi Console: `/api/events/event-doanhtri-20261121/attendees-preview: 404 Not Found` và WebSocket socket.io 400.
+    * **Cơ chế xung đột Route trong TanStack Router**:
+      - Trước đây, `apps/ceo1983_app_fe/src/routes/checkin.tsx` được viết nguyên khối 646 dòng chứa `UnifiedCheckinManagementPage` và đăng ký route `createFileRoute("/checkin")`. Nó **KHÔNG có component `<Outlet />`**.
+      - Theo quy ước định tuyến phân cấp của TanStack Router, khi tồn tại `checkin.tsx` và `checkin.$eventId.tsx`, `checkin.tsx` mặc nhiên trở thành Parent Layout Route của `/$eventId`.
+      - Khi truy cập `/checkin/event-doanhtri-20261121`, TanStack Router nạp `checkin.tsx` và render component quản trị, nuốt trọn và không bao giờ render file con `checkin.$eventId.tsx` (`PublicEventCheckinPage`)!
+  - **2. Giải Pháp Tái Cấu Trúc Tuyến Đường Chuẩn Mực TanStack Router**:
+    * **Tách layout và route index độc lập**:
+      - Chuyển `apps/ceo1983_app_fe/src/routes/checkin.tsx` thành Parent Layout Route thuần túy (giống mẫu `events.tsx`):
+        ```tsx
+        import { createFileRoute, Outlet } from "@tanstack/react-router";
+        export const Route = createFileRoute("/checkin")({
+          component: () => <Outlet />,
+        });
+        ```
+      - Di chuyển toàn bộ component quản trị `UnifiedCheckinManagementPage` sang `apps/ceo1983_app_fe/src/routes/checkin.index.tsx` và đăng ký `createFileRoute("/checkin/")`.
+      - Chạy lại generator: `node scripts/gen-routes.mjs` để cập nhật `routeTree.gen.ts`.
+    * **Kết quả định tuyến**:
+      - Khi khách quét mã QR truy cập `/checkin/event-doanhtri-20261121`: `CheckinRoute` nạp `<Outlet />` và hiển thị thẳng `CheckinEventIdRoute` (`PublicEventCheckinPage` - Form công khai Viện Doanh Trí không AppShell, không sidebar, không camera).
+      - Khi quản trị viên truy cập `/checkin`: `CheckinRoute` nạp `<Outlet />` và hiển thị `CheckinIndexRoute` (`UnifiedCheckinManagementPage` - Cổng quản trị điểm danh đầy đủ tính năng).
+    * **Bổ sung API Endpoint dự phòng**:
+      - Trong `events.controller.ts`, bổ sung `@Get(':id/attendees-preview')` ánh xạ sang `getPublicAttendees` để triệt tiêu hoàn toàn lỗi 404 nếu có bất kỳ thành phần nào gọi preview.
+  - **3. Kiểm Thử & Xác Nhận**:
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
@@ -5251,6 +5311,36 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 20/11/2026 (v11.78): Khắc Phục Triệt Để Lỗi TanStack Router Lồng Nhầm Màn Hình CRM Quản Trị `UnifiedCheckinManagementPage` ("Quản Lý Điểm Danh & Check-in Độc Lập") Thay Vì Form Public Khi Quét QR Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002])**:
+  - **1. Phân Tích Nguyên Nhân Gốc Rễ (Ảnh người dùng cung cấp & Console Logs)**:
+    * Khi người dùng mở `https://crm.ceo1983.viconnect.vn/checkin/event-doanhtri-20261121`, màn hình hiển thị:
+      - Title: "Quản Lý Điểm Danh & Check-in Độc Lập" kèm thanh Sidebar CRM ("Hiệp hội Doanh... Tổng quan, Trợ lý AI, Hội viên, Sự kiện...").
+      - Yêu cầu quyền Camera: "Camera not allowed" (do camera QR scanner của trang quản trị tự bật).
+      - Lỗi Console: `/api/events/event-doanhtri-20261121/attendees-preview: 404 Not Found` và WebSocket socket.io 400.
+    * **Cơ chế xung đột Route trong TanStack Router**:
+      - Trước đây, `apps/ceo1983_app_fe/src/routes/checkin.tsx` được viết nguyên khối 646 dòng chứa `UnifiedCheckinManagementPage` và đăng ký route `createFileRoute("/checkin")`. Nó **KHÔNG có component `<Outlet />`**.
+      - Theo quy ước định tuyến phân cấp của TanStack Router, khi tồn tại `checkin.tsx` và `checkin.$eventId.tsx`, `checkin.tsx` mặc nhiên trở thành Parent Layout Route của `/$eventId`.
+      - Khi truy cập `/checkin/event-doanhtri-20261121`, TanStack Router nạp `checkin.tsx` và render component quản trị, nuốt trọn và không bao giờ render file con `checkin.$eventId.tsx` (`PublicEventCheckinPage`)!
+  - **2. Giải Pháp Tái Cấu Trúc Tuyến Đường Chuẩn Mực TanStack Router**:
+    * **Tách layout và route index độc lập**:
+      - Chuyển `apps/ceo1983_app_fe/src/routes/checkin.tsx` thành Parent Layout Route thuần túy (giống mẫu `events.tsx`):
+        ```tsx
+        import { createFileRoute, Outlet } from "@tanstack/react-router";
+        export const Route = createFileRoute("/checkin")({
+          component: () => <Outlet />,
+        });
+        ```
+      - Di chuyển toàn bộ component quản trị `UnifiedCheckinManagementPage` sang `apps/ceo1983_app_fe/src/routes/checkin.index.tsx` và đăng ký `createFileRoute("/checkin/")`.
+      - Chạy lại generator: `node scripts/gen-routes.mjs` để cập nhật `routeTree.gen.ts`.
+    * **Kết quả định tuyến**:
+      - Khi khách quét mã QR truy cập `/checkin/event-doanhtri-20261121`: `CheckinRoute` nạp `<Outlet />` và hiển thị thẳng `CheckinEventIdRoute` (`PublicEventCheckinPage` - Form công khai Viện Doanh Trí không AppShell, không sidebar, không camera).
+      - Khi quản trị viên truy cập `/checkin`: `CheckinRoute` nạp `<Outlet />` và hiển thị `CheckinIndexRoute` (`UnifiedCheckinManagementPage` - Cổng quản trị điểm danh đầy đủ tính năng).
+    * **Bổ sung API Endpoint dự phòng**:
+      - Trong `events.controller.ts`, bổ sung `@Get(':id/attendees-preview')` ánh xạ sang `getPublicAttendees` để triệt tiêu hoàn toàn lỗi 404 nếu có bất kỳ thành phần nào gọi preview.
+  - **3. Kiểm Thử & Xác Nhận**:
+    * Frontend: `npx tsc -p apps/ceo1983_app_fe/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
+    * Backend: `npx tsc -p apps/ceo1983_app_be/tsconfig.json --noEmit` -> **Exit code 0 (0 errors)**.
 
 - **Bản cập nhật ngày 20/11/2026 (v11.77): Tách Biệt Độc Lập Form Check-in Viện Doanh Trí (Xóa 100% Text CEO 1983), Hỗ Trợ Xuất & Gửi Báo Cáo 3 Định Dạng (Word, PDF, Excel) Kèm Cột Thời Gian Check-in, Khắc Phục Triệt Để Lỗi SSL Zalo `NET::ERR_CERT_AUTHORITY_INVALID` Bằng Cơ Chế HTTP Proxy Bypass ([NODE-CRM-006], [NODE-CRM-007], [NODE-CORE-002], [NODE-CORE-006])**:
   - **1. Tách Biệt Hoàn Toàn Viện Doanh Trí Khỏi CLB CEO 1983 Trong Form Điểm Danh**:
