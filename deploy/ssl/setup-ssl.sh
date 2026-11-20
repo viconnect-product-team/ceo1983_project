@@ -49,6 +49,15 @@ if command -v nginx >/dev/null 2>&1; then
     cp -f /root/ssl-proxy/server.key /etc/nginx/ssl/ceo1983.key 2>/dev/null || true
     chmod 644 /etc/nginx/ssl/ceo1983.* 2>/dev/null || true
 
+    # Tự động cấp chứng chỉ bảo mật Let's Encrypt (CA Trusted) nếu certbot có sẵn
+    if command -v certbot >/dev/null 2>&1; then
+        echo "[Certbot] Kiểm tra và cấp phát chứng chỉ SSL CA Trusted cho crm.ceo1983.viconnect.vn và ceo1983.viconnect.vn..."
+        certbot certonly --webroot -w /var/www/certbot \
+            -d crm.ceo1983.viconnect.vn -d ceo1983.viconnect.vn \
+            --email admin@viconnect.vn --agree-tos --no-eff-email --non-interactive \
+            --keep-until-expiring 2>/dev/null || true
+    fi
+
     SSL_CERT="/etc/nginx/ssl/ceo1983.crt"
     SSL_KEY="/etc/nginx/ssl/ceo1983.key"
     if [ -f /etc/letsencrypt/live/crm.ceo1983.viconnect.vn/fullchain.pem ]; then
@@ -89,7 +98,7 @@ server {
     }
 
     # Cho phép truy cập form checkin trực tiếp qua HTTP không chuyển hướng HTTPS để camera/Zalo quét mượt mà không lỗi SSL
-    location ^~ /checkin/ {
+    location ^~ /checkin {
         proxy_pass http://127.0.0.1:5004;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -99,6 +108,15 @@ server {
     }
 
     location ^~ /api/events/ {
+        proxy_pass http://127.0.0.1:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /api/ {
         proxy_pass http://127.0.0.1:5005;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;

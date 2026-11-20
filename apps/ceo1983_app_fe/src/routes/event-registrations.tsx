@@ -60,6 +60,22 @@ export const Route = createFileRoute("/event-registrations")({
   component: RegPage,
 });
 
+function formatCheckinTime(val: any): string {
+  if (!val) return "Chưa check-in";
+  if (typeof val === "string") {
+    if (val.includes("/") && val.includes(":")) return val;
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+    }
+    return val;
+  }
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  }
+  return String(val);
+}
+
 function RegPage() {
   const t = useT();
   const fmt = useFmt();
@@ -737,18 +753,15 @@ function RegPage() {
         { header: "STT", key: "stt", width: 8, value: (_, i) => String(i + 1) },
         { header: "Mã Đăng Ký", key: "id", width: 18, value: (r) => r.id },
         { header: "Họ và Tên Đại Biểu", key: "memberName", width: 26, value: (r) => r.memberName },
+        { header: "Số Điện Thoại", key: "phone", width: 16, value: (r) => (r as any).phone || "—" },
         { header: "Email", key: "email", width: 28, value: (r) => r.email || "—" },
         { header: "Chức Danh", key: "position", width: 20, value: (r) => (r as any).position || "—" },
         { header: "Công Ty / Doanh Nghiệp", key: "company", width: 30, value: (r) => (r as any).company || "—" },
-        { header: "Số Điện Thoại", key: "phone", width: 16, value: (r) => (r as any).phone || "—" },
         {
           header: "Thời Gian Check-in",
           key: "checkedInAt",
-          width: 22,
-          value: (r) =>
-            r.checkedInAt
-              ? new Date(r.checkedInAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
-              : "Chưa check-in",
+          width: 24,
+          value: (r) => formatCheckinTime(r.checkedInAt),
         },
         {
           header: "Phân Loại Check-in",
@@ -1249,7 +1262,13 @@ function RegPage() {
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-muted-foreground truncate max-w-[200px]">
+                      {((r as any).position || (r as any).company) && (
+                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate max-w-[220px]" title={`${(r as any).position || ""} ${(r as any).company || ""}`}>
+                          {(r as any).position ? `${(r as any).position} · ` : ""}{(r as any).company || ""}
+                        </div>
+                      )}
+                      <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">
+                        {(r as any).phone ? <span className="font-semibold text-slate-600 dark:text-slate-400">SĐT: {(r as any).phone} · </span> : null}
                         {r.email} {r.memberCode ? `· ${r.memberCode}` : ""}
                       </div>
                     </td>
@@ -1362,10 +1381,7 @@ function RegPage() {
                           </span>
                           {r.checkedInAt && (
                             <span className="text-[10px] text-muted-foreground font-mono">
-                              {new Date(r.checkedInAt).toLocaleTimeString("vi-VN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {formatCheckinTime(r.checkedInAt)}
                             </span>
                           )}
                         </div>
@@ -1377,10 +1393,7 @@ function RegPage() {
                           </span>
                           {r.checkedInAt && (
                             <span className="text-[10px] text-muted-foreground font-mono">
-                              {new Date(r.checkedInAt).toLocaleTimeString("vi-VN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {formatCheckinTime(r.checkedInAt)}
                             </span>
                           )}
                         </div>

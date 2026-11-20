@@ -391,7 +391,11 @@ export class EventsService implements OnModuleInit {
           : String(r.registered_at).slice(0, 10)
         : '',
       status: r.status,
-      ticketType: r.ticket_type,
+      ticketType:
+        parsedPayload.label ||
+        (r.ticket_type && !String(r.ticket_type).trim().startsWith('{')
+          ? r.ticket_type
+          : 'Vé Mời Toạ Đàm'),
       seatAssignment: r.seat_assignment ?? '',
       paymentStatus: r.payment_status ?? 'pending',
       paymentMethod: r.payment_method ?? 'transfer',
@@ -403,7 +407,7 @@ export class EventsService implements OnModuleInit {
         ? r.checked_in_at instanceof Date
           ? r.checked_in_at.toISOString()
           : String(r.checked_in_at)
-        : null,
+        : parsedPayload.checkedInAt || parsedPayload.checkedInAtFormatted || null,
       checkinStatus,
       luckyNumber: r.lucky_number ?? '',
     };
@@ -561,7 +565,7 @@ export class EventsService implements OnModuleInit {
         FROM public.event_registrations r
         LEFT JOIN public.events e ON r.event_id = e.id
         WHERE (r.event_id = ${eventId} OR e.slug = ${eventId} OR e.id = ${eventId}) AND r.status != 'cancelled'
-        ORDER BY r.checked_in_at DESC NULLS LAST, r.registered_at DESC
+        ORDER BY r.registered_at DESC, r.created_at DESC
       `.catch(() => []);
     } else if (isPlatformAdmin && !associationId) {
       rows = await this.prisma.$queryRaw<any[]>`
@@ -4063,8 +4067,11 @@ export class EventsService implements OnModuleInit {
           UPDATE public.event_registrations
           SET member_name = ${fullName},
               email = ${email},
+              phone = ${phone},
               status = 'confirmed',
+              checked_in_at = now(),
               ticket_type = ${ticketMeta},
+              qr_payload = ${ticketMeta},
               updated_at = now()
           WHERE id = ${regId}
         `;
@@ -4078,8 +4085,9 @@ export class EventsService implements OnModuleInit {
       try {
         await this.prisma.$executeRaw`
           INSERT INTO public.event_registrations (
-            id, event_id, member_code, member_name, email,
-            registered_at, status, ticket_type, association_id,
+            id, event_id, member_code, member_name, email, phone,
+            registered_at, checked_in_at, status, ticket_type, qr_payload,
+            payment_status, payment_amount, association_id,
             created_at, updated_at
           ) VALUES (
             ${regId},
@@ -4087,9 +4095,14 @@ export class EventsService implements OnModuleInit {
             ${memberCode},
             ${fullName},
             ${email},
+            ${phone},
             now()::date,
+            now(),
             'confirmed',
             ${ticketMeta},
+            ${ticketMeta},
+            'free',
+            0,
             ${targetAssociationId}::uuid,
             now(),
             now()
@@ -4100,16 +4113,20 @@ export class EventsService implements OnModuleInit {
         try {
           await this.prisma.$executeRaw`
             INSERT INTO public.event_registrations (
-              id, event_id, member_code, member_name, email,
-              registered_at, status, ticket_type, association_id
+              id, event_id, member_code, member_name, email, phone,
+              registered_at, checked_in_at, status, ticket_type, qr_payload,
+              association_id
             ) VALUES (
               ${regId},
               ${resolvedEventId},
               ${memberCode},
               ${fullName},
               ${email},
+              ${phone},
               now()::date,
+              now(),
               'confirmed',
+              ${ticketMeta},
               ${ticketMeta},
               (SELECT association_id FROM public.events WHERE id = ${resolvedEventId} LIMIT 1)
             )
@@ -4302,18 +4319,33 @@ export class EventsService implements OnModuleInit {
       try {
         if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
       } catch {}
+      if (r.ticket_type && typeof r.ticket_type === 'string' && r.ticket_type.trim().startsWith('{')) {
+        try {
+          const parsedTicket = JSON.parse(r.ticket_type);
+          parsed = { ...parsedTicket, ...parsed };
+        } catch {}
+      }
 
-      const checkinTime = r.checked_in_at
-        ? new Date(r.checked_in_at).toLocaleString('vi-VN', {
-            timeZone: 'Asia/Ho_Chi_Minh',
-          })
-        : 'Chưa check-in';
+      const rawTime = r.checked_in_at || parsed.checkedInAt || parsed.checkedInAtFormatted;
+      let checkinTime = 'Chưa check-in';
+      if (rawTime) {
+        if (typeof rawTime === 'string' && rawTime.includes(':') && rawTime.includes('/')) {
+          checkinTime = rawTime;
+        } else {
+          const d = new Date(rawTime);
+          checkinTime = !isNaN(d.getTime())
+            ? d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+            : String(rawTime);
+        }
+      }
+
+      const rawStatus = r.checkin_status || parsed.checkinStatus;
       const statusText =
-        r.checkin_status === 'on_time'
+        rawStatus === 'on_time'
           ? 'Đúng giờ (trong 30p)'
-          : r.checkin_status === 'late'
+          : rawStatus === 'late'
             ? 'Check-in muộn (>30p)'
-            : r.checked_in_at
+            : rawTime
               ? 'Đã check-in'
               : 'Chưa check-in';
 
@@ -4327,7 +4359,7 @@ export class EventsService implements OnModuleInit {
         'Số Điện Thoại': r.phone || parsed.phone || '—',
         'Thời Gian Check-in': checkinTime,
         'Phân Loại Check-in': statusText,
-        'Hạng Vé': r.ticket_type || 'Vé Mời Toạ Đàm',
+        'Hạng Vé': parsed.label || (r.ticket_type && !String(r.ticket_type).startsWith('{') ? r.ticket_type : 'Vé Mời Toạ Đàm'),
       };
     });
 
@@ -4502,18 +4534,32 @@ export class EventsService implements OnModuleInit {
                   try {
                     if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
                   } catch {}
+                  try {
+                    if (r.ticket_type && String(r.ticket_type).trim().startsWith('{')) {
+                      parsed = { ...JSON.parse(r.ticket_type), ...parsed };
+                    }
+                  } catch {}
 
-                  const checkinTime = r.checked_in_at
-                    ? new Date(r.checked_in_at).toLocaleString('vi-VN', {
-                        timeZone: 'Asia/Ho_Chi_Minh',
-                      })
-                    : 'Chưa check-in';
+                  const rawTime = r.checked_in_at || parsed.checkedInAt || parsed.checkedInAtFormatted;
+                  let checkinTime = 'Chưa check-in';
+                  if (rawTime) {
+                    if (typeof rawTime === 'string' && rawTime.includes(':') && rawTime.includes('/')) {
+                      checkinTime = rawTime;
+                    } else {
+                      const d = new Date(rawTime);
+                      checkinTime = !isNaN(d.getTime())
+                        ? d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+                        : String(rawTime);
+                    }
+                  }
+
+                  const rawStatus = r.checkin_status || parsed.checkinStatus;
                   const statusText =
-                    r.checkin_status === 'on_time'
-                      ? 'Đúng giờ'
-                      : r.checkin_status === 'late'
-                        ? 'Check-in muộn'
-                        : r.checked_in_at
+                    rawStatus === 'on_time'
+                      ? 'Đúng giờ (trong 30p)'
+                      : rawStatus === 'late'
+                        ? 'Check-in muộn (>30p)'
+                        : rawTime
                           ? 'Đã check-in'
                           : 'Chưa đến';
 
@@ -4726,24 +4772,38 @@ export class EventsService implements OnModuleInit {
       try {
         if (r.qr_payload) parsed = JSON.parse(r.qr_payload);
       } catch {}
+      try {
+        if (r.ticket_type && String(r.ticket_type).trim().startsWith('{')) {
+          parsed = { ...JSON.parse(r.ticket_type), ...parsed };
+        }
+      } catch {}
 
       const name = this.sanitizePdfText(r.member_name || parsed.fullName || '—');
       const pos = this.sanitizePdfText(r.position || parsed.position || '—');
       const comp = this.sanitizePdfText(r.company || parsed.company || '—');
-      const time = r.checked_in_at
-        ? new Date(r.checked_in_at).toLocaleTimeString('vi-VN', {
+      let time = 'Chua check-in';
+      const rawTime = r.checked_in_at || parsed.checkedInAt || parsed.checkedInAtFormatted;
+      if (rawTime) {
+        if (typeof rawTime === 'string' && rawTime.includes(':')) {
+          time = this.sanitizePdfText(rawTime);
+        } else {
+          time = new Date(rawTime).toLocaleTimeString('vi-VN', {
             timeZone: 'Asia/Ho_Chi_Minh',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-          })
-        : 'Chua check-in';
+          });
+        }
+      }
+      const rawStatus = r.checkin_status || parsed.checkinStatus;
       const status =
-        r.checkin_status === 'on_time'
+        rawStatus === 'on_time'
           ? 'Dung gio'
-          : r.checkin_status === 'late'
+          : rawStatus === 'late'
             ? 'Muon (>30p)'
-            : 'Chua den';
+            : time !== 'Chua check-in'
+              ? 'Da check-in'
+              : 'Chua den';
 
       page.drawText(String(i + 1), { x: 52, y: currentY, size: 7.5, font: regFont });
       page.drawText(name.slice(0, 20), { x: 75, y: currentY, size: 7.5, font: boldFont });
@@ -4787,13 +4847,19 @@ export class EventsService implements OnModuleInit {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
       WHERE event_id = ${eventId} AND status != 'cancelled'
-      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+      ORDER BY registered_at DESC, created_at DESC
     `.catch(() => []);
 
-    const onTimeCount = rows.filter(
-      (r) => r.checkin_status === 'on_time',
-    ).length;
-    const lateCount = rows.filter((r) => r.checkin_status === 'late').length;
+    let onTimeCount = 0;
+    let lateCount = 0;
+    for (const r of rows) {
+      let parsed: any = {};
+      try { if (r.qr_payload) parsed = JSON.parse(r.qr_payload); } catch {}
+      try { if (r.ticket_type && String(r.ticket_type).trim().startsWith('{')) parsed = { ...JSON.parse(r.ticket_type), ...parsed }; } catch {}
+      const st = r.checkin_status || parsed.checkinStatus;
+      if (st === 'on_time' || (!st && r.checked_in_at)) onTimeCount++;
+      else if (st === 'late') lateCount++;
+    }
 
     const timestamp = Date.now();
     const attachments: Array<{
@@ -4884,13 +4950,19 @@ export class EventsService implements OnModuleInit {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
       WHERE event_id = ${eventId} AND status != 'cancelled'
-      ORDER BY checked_in_at DESC NULLS LAST, registered_at DESC
+      ORDER BY registered_at DESC, created_at DESC
     `.catch(() => []);
 
-    const onTimeCount = rows.filter(
-      (r) => r.checkin_status === 'on_time',
-    ).length;
-    const lateCount = rows.filter((r) => r.checkin_status === 'late').length;
+    let onTimeCount = 0;
+    let lateCount = 0;
+    for (const r of rows) {
+      let parsed: any = {};
+      try { if (r.qr_payload) parsed = JSON.parse(r.qr_payload); } catch {}
+      try { if (r.ticket_type && String(r.ticket_type).trim().startsWith('{')) parsed = { ...JSON.parse(r.ticket_type), ...parsed }; } catch {}
+      const st = r.checkin_status || parsed.checkinStatus;
+      if (st === 'on_time' || (!st && r.checked_in_at)) onTimeCount++;
+      else if (st === 'late') lateCount++;
+    }
     const timestamp = Date.now();
 
     if (format === 'word') {
