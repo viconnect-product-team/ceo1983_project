@@ -123,8 +123,8 @@ function PublicEventCheckinPage() {
       return;
     }
 
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Vui lòng nhập địa chỉ Email hợp lệ để nhận xác nhận!");
+    if (email.trim() && !email.includes("@")) {
+      toast.error("Vui lòng nhập địa chỉ Email hợp lệ!");
       return;
     }
 
@@ -574,18 +574,32 @@ function PublicEventCheckinPage() {
                   />
                 </div>
 
-                {/* Email */}
+                {/* Số điện thoại */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-[#8B0000]" />
+                    Số điện thoại liên hệ:
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Ví dụ: 0912 345 678"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
+                  />
+                </div>
+
+                {/* Email (tuỳ chọn) */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5 text-[#8B0000]" />
-                    Địa chỉ Email (để nhận xác nhận): <span className="text-red-500">*</span>
+                    Địa chỉ Email (nhận thư cảm ơn & thông báo):
                   </label>
                   <input
                     type="email"
-                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@company.vn"
+                    placeholder="email@company.vn (không bắt buộc)"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
                   />
                 </div>
@@ -600,7 +614,7 @@ function PublicEventCheckinPage() {
                     type="text"
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
-                    placeholder="Ví dụ: Chủ tịch, Tổng giám đốc, Trưởng ban..."
+                    placeholder="Ví dụ: Chủ tịch, Tổng giám đốc, Giám đốc..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
                   />
                 </div>
@@ -615,22 +629,7 @@ function PublicEventCheckinPage() {
                     type="text"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    placeholder="Ví dụ: Công ty CP Công Nghệ VIO..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
-                  />
-                </div>
-
-                {/* Số điện thoại (tuỳ chọn) */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-[#8B0000]" />
-                    Số điện thoại liên hệ (tuỳ chọn):
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0912 345 678"
+                    placeholder="Ví dụ: Công ty CP Đầu Tư & Phát Triển..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400 bg-white"
                   />
                 </div>

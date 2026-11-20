@@ -3946,7 +3946,7 @@ export class EventsService implements OnModuleInit {
    */
   async publicCheckin(eventId: string, body: any) {
     const fullName = String(body?.fullName || body?.name || '').trim();
-    const email = String(body?.email || '').trim().toLowerCase();
+    let email = String(body?.email || '').trim().toLowerCase();
     const position = String(body?.position || body?.title || '').trim();
     const company = String(body?.company || '').trim();
     const phone = String(body?.phone || '').trim();
@@ -3954,10 +3954,11 @@ export class EventsService implements OnModuleInit {
     if (!fullName) {
       throw new BadRequestException('Vui lòng nhập Họ và tên để check-in');
     }
+
+    // Nếu khách không nhập email hoặc email không hợp lệ, tự động tạo email định danh theo SĐT hoặc mã khách
     if (!email || !email.includes('@')) {
-      throw new BadRequestException(
-        'Vui lòng nhập địa chỉ Email hợp lệ để nhận xác nhận',
-      );
+      const cleanPhone = phone.replace(/\D/g, '');
+      email = cleanPhone ? `${cleanPhone}@doanhtri.vn` : `guest_${Date.now()}@doanhtri.vn`;
     }
 
     // 1. Tìm sự kiện
@@ -4106,28 +4107,30 @@ export class EventsService implements OnModuleInit {
       year: 'numeric',
     });
 
-    // 4. Ngay lập tức gửi email xác nhận check-in thành công về hòm thư người đã điền
-    this.mailService
-      .sendDoanhTriCheckinSuccessEmail({
-        to: email,
-        fullName,
-        position,
-        company,
-        eventTitle: event.name || event.title,
-        eventDate: 'Thứ 7, ngày 21/11/2026',
-        eventTime: '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
-        eventLocation:
-          event.location ||
-          'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
-        checkedInAt: checkedInAtFormatted,
-        checkinStatus,
-        hotline: '0988.870.888 / 0903.203.204',
-      })
-      .catch((err) => {
-        this.logger.warn(
-          `Failed to send checkin confirmation email: ${err.message}`,
-        );
-      });
+    // 4. Ngay lập tức gửi email xác nhận check-in thành công về hòm thư người đã điền (nếu có email thật)
+    if (!email.endsWith('@doanhtri.vn')) {
+      this.mailService
+        .sendDoanhTriCheckinSuccessEmail({
+          to: email,
+          fullName,
+          position,
+          company,
+          eventTitle: event.name || event.title,
+          eventDate: 'Thứ 7, ngày 21/11/2026',
+          eventTime: '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
+          eventLocation:
+            event.location ||
+            'Tầng 2, Nhà hàng Long Phụng, 29T2 Trung hòa nhân chính, TP Hà Nội',
+          checkedInAt: checkedInAtFormatted,
+          checkinStatus,
+          hotline: '0988.870.888 / 0903.203.204',
+        })
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to send checkin confirmation email: ${err.message}`,
+          );
+        });
+    }
 
     // 5. Lấy danh sách đại biểu đã đăng ký & điểm danh mới nhất
     const attendeesData = await this.getPublicAttendees(resolvedEventId).catch(() => ({
