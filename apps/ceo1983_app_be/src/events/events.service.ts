@@ -580,7 +580,7 @@ export class EventsService implements OnModuleInit {
         SELECT r.*, e.name as event_name, e.date as event_date, e.location as event_location, e.ticket_price as event_ticket_price
         FROM public.event_registrations r
         LEFT JOIN public.events e ON r.event_id = e.id
-        WHERE r.association_id = ${assocId}::uuid AND r.status != 'cancelled'
+        WHERE (r.association_id = ${assocId}::uuid OR e.association_id = ${assocId}::uuid OR r.association_id IS NULL) AND r.status != 'cancelled'
         ORDER BY r.registered_at DESC
       `.catch(() => []);
     } else {
@@ -3346,6 +3346,54 @@ export class EventsService implements OnModuleInit {
           WHERE id = $1
         `,
             reg.id,
+          )
+          .catch(() => {});
+      } else if (resolvedEventId) {
+        // Tự động đồng bộ đại biểu check-in mới chưa đăng ký trước vào bảng event_registrations để CRM hiển thị ngay
+        const newRegId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+        const autoAssocId =
+          eventRow?.association_id ||
+          memberRow?.association_id ||
+          'c1983000-0000-4000-8000-000000001983';
+        const ticketMeta = JSON.stringify({
+          fullName: attendeeName,
+          phone: attendeePhone,
+          company: attendeeCompany,
+          position: attendeePosition,
+          checkinStatus: 'on_time',
+          checkedIn: true,
+          type: 'standard',
+          label: ticketType,
+        });
+
+        await this.prisma
+          .$executeRawUnsafe(
+            `
+          INSERT INTO public.event_registrations (
+            id, event_id, member_code, member_name, email, phone,
+            company, position, checkin_status,
+            registered_at, checked_in_at, status, ticket_type, qr_payload,
+            payment_status, payment_amount, association_id,
+            created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            $7, $8, 'on_time',
+            NOW()::date, NOW(), 'attended', $9, $10,
+            'free', 0, $11::uuid,
+            NOW(), NOW()
+          )
+        `,
+            newRegId,
+            resolvedEventId,
+            finalMemberCode,
+            attendeeName,
+            memberRow?.email || '',
+            attendeePhone,
+            attendeeCompany,
+            attendeePosition,
+            ticketMeta,
+            ticketMeta,
+            autoAssocId,
           )
           .catch(() => {});
       }

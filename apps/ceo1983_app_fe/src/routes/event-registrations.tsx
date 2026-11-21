@@ -144,10 +144,6 @@ function RegPage() {
     }
   };
 
-  useEffect(() => {
-    fetchLiveRegistrations();
-  }, []);
-
   const EVENTS = eventsList;
   // Dữ liệu người hủy tham dự biến mất hoàn toàn khỏi CRM theo yêu cầu
   const REGISTRATIONS = useMemo(() => {
@@ -164,6 +160,19 @@ function RegPage() {
   const [status, setStatus] = useState<Registration["status"] | "all">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "pending">("all");
   const [checkinFilter, setCheckinFilter] = useState<"all" | "on_time" | "late" | "not_checked_in">("all");
+
+  useEffect(() => {
+    fetchLiveRegistrations();
+    // Tự động đồng bộ đại biểu mới check-in ngầm mỗi 10 giây
+    const interval = setInterval(() => {
+      if (eventId && eventId !== "all") {
+        fetchLiveRegistrationsForEvent(eventId);
+      } else {
+        fetchLiveRegistrations();
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [eventId]);
 
   // QR Checkin and Excel Email modal states
   const [checkinQrModalOpen, setCheckinQrModalOpen] = useState(false);
@@ -1048,6 +1057,22 @@ function RegPage() {
         </div>
 
         <div className="flex items-center gap-2 pr-1">
+          <button
+            onClick={() => {
+              if (eventId && eventId !== "all") {
+                fetchLiveRegistrationsForEvent(eventId);
+              } else {
+                fetchLiveRegistrations();
+              }
+              toast.success("Đã đồng bộ danh sách đại biểu mới nhất!");
+            }}
+            disabled={isLoadingLive}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition cursor-pointer shadow-2xs"
+            title="Làm mới và lấy danh sách đại biểu vừa check-in tức thì"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLive ? "animate-spin" : ""}`} />
+            <span>Làm mới</span>
+          </button>
           <button
             onClick={handleExportCheckinExcel}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer shadow-2xs"

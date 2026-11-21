@@ -1,5 +1,21 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi truy vấn lọc Association**: Trong `events.service.ts` hàm `listRegistrations`, câu truy vấn lọc cứng `WHERE r.association_id = ${assocId}::uuid`. Khi đại biểu mới check-in qua link web công khai (`/checkin/$eventId`) hoặc qua quét mã QR soát vé cổng, nếu `association_id` của bản ghi đăng ký khác với `assocId` của tài khoản admin đăng nhập (hoặc bị NULL do fallback insert), toàn bộ bản ghi mới bị loại bỏ khỏi danh sách CRM.
+    * **Lỗi thiếu bản ghi khi Quét QR Soát Vé Cổng**: Khi nhân viên lễ tân quét QR soát vé cổng (`scanTicketPayload`), đối với người mới chưa đăng ký trước (`!reg?.id`), hệ thống cũ chỉ ghi vào bảng `member_checkins` mà không hề tạo bản ghi tương ứng vào bảng `event_registrations`. Do CRM chỉ truy vấn bảng `event_registrations` nên người mới hoàn toàn không hiển thị trên giao diện CRM.
+    * **Thiếu cơ chế Realtime / Auto-Poll**: Trên giao diện CRM `/event-registrations`, danh sách chỉ được nạp 1 lần lúc tải trang mà không có cơ chế tự động đồng bộ ngầm khi có khách mới vừa check-in ở quầy soát vé.
+  - **2. Giải Pháp Triệt Để Đã Triển Khai**:
+    * **Nới lỏng điều kiện truy vấn `listRegistrations`**: Sửa thành `WHERE (r.association_id = ${assocId}::uuid OR e.association_id = ${assocId}::uuid OR r.association_id IS NULL) AND r.status != 'cancelled'`, đảm bảo mọi đại biểu đăng ký hoặc check-in thuộc sự kiện của hiệp hội đều được hiển thị đầy đủ 100%.
+    * **Tự động tạo bản ghi `event_registrations` trong `scanTicketPayload`**: Khi quét mã QR cho người mới (`!reg?.id` và `body.confirm`), hệ thống lập tức INSERT bản ghi vào `public.event_registrations` với `status = 'attended'`, `checked_in_at = NOW()`, `checkin_status = 'on_time'`.
+    * **Tự động đồng bộ ngầm (Auto-polling mỗi 10s) & Bổ sung nút "Làm mới" trên CRM**:
+      - Thêm bộ đếm interval 10 giây trong `event-registrations.tsx` để tự động kéo danh sách mới nhất khi có khách vừa check-in.
+      - Thêm nút "Làm mới" (RefreshCw) trên thanh công cụ để admin chủ động cập nhật tức thì 1 chạm.
+    * **Chống nghẽn ổ đĩa VPS khi nạp Docker Image**: Bổ sung bước `[0/5]` trong workflow CI/CD để tự động gỡ container cũ và xóa image cũ của CEO 1983 trước khi chạy `docker load`, giải phóng ngay 3GB - 5GB trong containerd.
+  - **3. Kết Quả Kiểm Thử Chất Lượng (Strict Pre-flight Check)**:
+    * `apps/ceo1983_app_fe`: `node scripts/gen-routes.mjs` && `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+
 - **Bản cập nhật ngày 21/11/2026 (v11.96): Chuyển Đổi Sang Kiến Trúc SSH Tar Pipe Stream Tuyệt Đối Không Phụ Thuộc SCP/SFTP ([NODE-CORE-005], [NODE-CORE-006])**:
   - **1. Phân Tích Căn Nguyên Lỗi `scp: stat remote: No such file or directory`**:
     * Trong OpenSSH phiên bản 9.0+, lệnh `scp` chuyển sang sử dụng backend SFTP subsystem.
@@ -2531,6 +2547,22 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi truy vấn lọc Association**: Trong `events.service.ts` hàm `listRegistrations`, câu truy vấn lọc cứng `WHERE r.association_id = ${assocId}::uuid`. Khi đại biểu mới check-in qua link web công khai (`/checkin/$eventId`) hoặc qua quét mã QR soát vé cổng, nếu `association_id` của bản ghi đăng ký khác với `assocId` của tài khoản admin đăng nhập (hoặc bị NULL do fallback insert), toàn bộ bản ghi mới bị loại bỏ khỏi danh sách CRM.
+    * **Lỗi thiếu bản ghi khi Quét QR Soát Vé Cổng**: Khi nhân viên lễ tân quét QR soát vé cổng (`scanTicketPayload`), đối với người mới chưa đăng ký trước (`!reg?.id`), hệ thống cũ chỉ ghi vào bảng `member_checkins` mà không hề tạo bản ghi tương ứng vào bảng `event_registrations`. Do CRM chỉ truy vấn bảng `event_registrations` nên người mới hoàn toàn không hiển thị trên giao diện CRM.
+    * **Thiếu cơ chế Realtime / Auto-Poll**: Trên giao diện CRM `/event-registrations`, danh sách chỉ được nạp 1 lần lúc tải trang mà không có cơ chế tự động đồng bộ ngầm khi có khách mới vừa check-in ở quầy soát vé.
+  - **2. Giải Pháp Triệt Để Đã Triển Khai**:
+    * **Nới lỏng điều kiện truy vấn `listRegistrations`**: Sửa thành `WHERE (r.association_id = ${assocId}::uuid OR e.association_id = ${assocId}::uuid OR r.association_id IS NULL) AND r.status != 'cancelled'`, đảm bảo mọi đại biểu đăng ký hoặc check-in thuộc sự kiện của hiệp hội đều được hiển thị đầy đủ 100%.
+    * **Tự động tạo bản ghi `event_registrations` trong `scanTicketPayload`**: Khi quét mã QR cho người mới (`!reg?.id` và `body.confirm`), hệ thống lập tức INSERT bản ghi vào `public.event_registrations` với `status = 'attended'`, `checked_in_at = NOW()`, `checkin_status = 'on_time'`.
+    * **Tự động đồng bộ ngầm (Auto-polling mỗi 10s) & Bổ sung nút "Làm mới" trên CRM**:
+      - Thêm bộ đếm interval 10 giây trong `event-registrations.tsx` để tự động kéo danh sách mới nhất khi có khách vừa check-in.
+      - Thêm nút "Làm mới" (RefreshCw) trên thanh công cụ để admin chủ động cập nhật tức thì 1 chạm.
+    * **Chống nghẽn ổ đĩa VPS khi nạp Docker Image**: Bổ sung bước `[0/5]` trong workflow CI/CD để tự động gỡ container cũ và xóa image cũ của CEO 1983 trước khi chạy `docker load`, giải phóng ngay 3GB - 5GB trong containerd.
+  - **3. Kết Quả Kiểm Thử Chất Lượng (Strict Pre-flight Check)**:
+    * `apps/ceo1983_app_fe`: `node scripts/gen-routes.mjs` && `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
 
 - **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
@@ -6093,6 +6125,22 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi truy vấn lọc Association**: Trong `events.service.ts` hàm `listRegistrations`, câu truy vấn lọc cứng `WHERE r.association_id = ${assocId}::uuid`. Khi đại biểu mới check-in qua link web công khai (`/checkin/$eventId`) hoặc qua quét mã QR soát vé cổng, nếu `association_id` của bản ghi đăng ký khác với `assocId` của tài khoản admin đăng nhập (hoặc bị NULL do fallback insert), toàn bộ bản ghi mới bị loại bỏ khỏi danh sách CRM.
+    * **Lỗi thiếu bản ghi khi Quét QR Soát Vé Cổng**: Khi nhân viên lễ tân quét QR soát vé cổng (`scanTicketPayload`), đối với người mới chưa đăng ký trước (`!reg?.id`), hệ thống cũ chỉ ghi vào bảng `member_checkins` mà không hề tạo bản ghi tương ứng vào bảng `event_registrations`. Do CRM chỉ truy vấn bảng `event_registrations` nên người mới hoàn toàn không hiển thị trên giao diện CRM.
+    * **Thiếu cơ chế Realtime / Auto-Poll**: Trên giao diện CRM `/event-registrations`, danh sách chỉ được nạp 1 lần lúc tải trang mà không có cơ chế tự động đồng bộ ngầm khi có khách mới vừa check-in ở quầy soát vé.
+  - **2. Giải Pháp Triệt Để Đã Triển Khai**:
+    * **Nới lỏng điều kiện truy vấn `listRegistrations`**: Sửa thành `WHERE (r.association_id = ${assocId}::uuid OR e.association_id = ${assocId}::uuid OR r.association_id IS NULL) AND r.status != 'cancelled'`, đảm bảo mọi đại biểu đăng ký hoặc check-in thuộc sự kiện của hiệp hội đều được hiển thị đầy đủ 100%.
+    * **Tự động tạo bản ghi `event_registrations` trong `scanTicketPayload`**: Khi quét mã QR cho người mới (`!reg?.id` và `body.confirm`), hệ thống lập tức INSERT bản ghi vào `public.event_registrations` với `status = 'attended'`, `checked_in_at = NOW()`, `checkin_status = 'on_time'`.
+    * **Tự động đồng bộ ngầm (Auto-polling mỗi 10s) & Bổ sung nút "Làm mới" trên CRM**:
+      - Thêm bộ đếm interval 10 giây trong `event-registrations.tsx` để tự động kéo danh sách mới nhất khi có khách vừa check-in.
+      - Thêm nút "Làm mới" (RefreshCw) trên thanh công cụ để admin chủ động cập nhật tức thì 1 chạm.
+    * **Chống nghẽn ổ đĩa VPS khi nạp Docker Image**: Bổ sung bước `[0/5]` trong workflow CI/CD để tự động gỡ container cũ và xóa image cũ của CEO 1983 trước khi chạy `docker load`, giải phóng ngay 3GB - 5GB trong containerd.
+  - **3. Kết Quả Kiểm Thử Chất Lượng (Strict Pre-flight Check)**:
+    * `apps/ceo1983_app_fe`: `node scripts/gen-routes.mjs` && `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
 
 - **Bản cập nhật ngày 20/11/2026 (v11.87): Hoàn Thành 3 Yêu Cầu Nâng Cấp Viện Doanh Trí: Xóa Bỏ Mã QR HTTP & Chuẩn Hóa Header Xanh; Bốc Thăm Trúng Thưởng Public Dạng Vòng Quay Xoay (Theme Sáng, Pháo Hoa, Setup Giải); Cổng Biểu Quyết Public Hỗ Trợ Vote Sao 1-5★, Biểu Đồ Kết Quả & Gửi Mail Đại Biểu Đã Check-in ([NODE-CRM-006], [NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Xóa Bỏ Hoàn Toàn Mã QR HTTP & Chuẩn Hóa Header Màu Xanh Viện Doanh Trí**:
