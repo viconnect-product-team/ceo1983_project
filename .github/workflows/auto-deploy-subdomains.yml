@@ -139,6 +139,7 @@ jobs:
             echo ">>> [1/2] Dọn dẹp sạch sẽ thư mục deploy-cache để chống lỗi Permission/Conflict..."
             rm -rf /root/deploy-cache
             mkdir -p /root/deploy-cache/dist-images
+            mkdir -p /root/deploy-cache/deploy
             
             echo ">>> [2/2] Giải phóng dung lượng ổ đĩa VPS..."
             docker system prune -f 2>/dev/null || true
@@ -146,7 +147,7 @@ jobs:
             echo "=== DUNG LƯỢNG Ổ ĐĨA HIỆN TẠI TRÊN VPS ==="
             df -h /
 
-      - name: Đẩy images và cấu hình sang Server VPS qua SSH (OpenSSH & SCP Native)
+      - name: Đẩy images và cấu hình sang Server VPS qua SSH Pipe Stream
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_PASS: ${{ secrets.SSH_PASSWORD }}
@@ -154,7 +155,7 @@ jobs:
           TARGET_USER: ${{ env.SERVER_USER }}
         run: |
           set -e
-          echo ">>> [1/3] Cài đặt sshpass và cấu hình OpenSSH Client trên GitHub Runner..."
+          echo ">>> [1/4] Cài đặt sshpass và cấu hình OpenSSH Client trên GitHub Runner..."
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass openssh-client
 
           # Cấu hình SSH Client với KeepAlive liên tục để không bao giờ bị ngắt kết nối
@@ -171,28 +172,30 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=15"
-          SCP_CMD="scp $SSH_OPTS"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=15 -o ServerAliveCountMax=60"
 
           if [ -n "$SSH_KEY" ]; then
             echo "$SSH_KEY" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
-            SCP_CMD="scp -i ~/.ssh/id_rsa $SSH_OPTS"
+            SSH_CMD="ssh -i ~/.ssh/id_rsa $SSH_OPTS ${TARGET_USER}@${TARGET_HOST}"
             echo ">>> Xác thực bằng SSH Private Key."
           elif [ -n "$SSH_PASS" ]; then
             echo "$SSH_PASS" > /tmp/sshpass.txt
             chmod 600 /tmp/sshpass.txt
-            SCP_CMD="sshpass -f /tmp/sshpass.txt scp $SSH_OPTS"
-            echo ">>> Xác thực bằng SSH Password qua sshpass file an toàn."
+            SSH_CMD="sshpass -f /tmp/sshpass.txt ssh $SSH_OPTS ${TARGET_USER}@${TARGET_HOST}"
+            echo ">>> Xác thực bằng SSH Password qua sshpass an toàn."
           else
             echo "::error::Không có SSH_PRIVATE_KEY hoặc SSH_PASSWORD!"
             exit 1
           fi
 
-          echo ">>> [2/3] Truyền thư mục cấu hình deploy/ sang VPS qua SCP..."
+          echo ">>> [2/4] Đảm bảo thư mục đích trên VPS tồn tại..."
+          $SSH_CMD "mkdir -p /root/deploy-cache/dist-images /root/deploy-cache/deploy"
+
+          echo ">>> [3/4] Truyền thư mục cấu hình deploy/ sang VPS qua Tar SSH Pipe..."
           for attempt in 1 2 3; do
-            echo ">>> Đồng bộ deploy/ (lần $attempt/3)..."
-            $SCP_CMD -r deploy ${TARGET_USER}@${TARGET_HOST}:/root/deploy-cache/ && break || {
+            echo ">>> Đang nén và stream deploy/ sang VPS (lần $attempt/3)..."
+            tar -C deploy -cf - . | $SSH_CMD "tar -C /root/deploy-cache/deploy -xf -" && break || {
               if [ $attempt -eq 3 ]; then
                 echo "::error::Truyền deploy/ thất bại sau 3 lần thử!"
                 rm -f /tmp/sshpass.txt
@@ -202,11 +205,12 @@ jobs:
               sleep 5
             }
           done
+          echo ">>> Đã truyền xong cấu hình deploy/ sang VPS!"
 
-          echo ">>> [3/3] Truyền Docker Images sang VPS qua SCP..."
-          echo ">>> 1. Đang truyền Frontend Image (~35MB)..."
+          echo ">>> [4/4] Truyền Docker Images sang VPS qua SSH Stream..."
+          echo ">>> 1. Đang stream Frontend Image (~35MB)..."
           for attempt in 1 2 3; do
-            $SCP_CMD dist-images/frontend-images.tar.gz ${TARGET_USER}@${TARGET_HOST}:/root/deploy-cache/dist-images/ && break || {
+            cat dist-images/frontend-images.tar.gz | $SSH_CMD "cat > /root/deploy-cache/dist-images/frontend-images.tar.gz" && break || {
               if [ $attempt -eq 3 ]; then
                 echo "::error::Truyền frontend-images.tar.gz thất bại sau 3 lần thử!"
                 rm -f /tmp/sshpass.txt
@@ -216,10 +220,11 @@ jobs:
               sleep 5
             }
           done
+          echo ">>> Đã stream xong Frontend Image!"
 
-          echo ">>> 2. Đang truyền Backend Image (~170MB)..."
+          echo ">>> 2. Đang stream Backend Image (~170MB)..."
           for attempt in 1 2 3; do
-            $SCP_CMD dist-images/backend-images.tar.gz ${TARGET_USER}@${TARGET_HOST}:/root/deploy-cache/dist-images/ && break || {
+            cat dist-images/backend-images.tar.gz | $SSH_CMD "cat > /root/deploy-cache/dist-images/backend-images.tar.gz" && break || {
               if [ $attempt -eq 3 ]; then
                 echo "::error::Truyền backend-images.tar.gz thất bại sau 3 lần thử!"
                 rm -f /tmp/sshpass.txt
@@ -229,9 +234,13 @@ jobs:
               sleep 5
             }
           done
+          echo ">>> Đã stream xong Backend Image!"
+
+          echo ">>> [Kiểm tra xác nhận] Nội dung đã nhận trên VPS:"
+          $SSH_CMD "ls -la /root/deploy-cache/deploy && ls -lh /root/deploy-cache/dist-images"
 
           rm -f /tmp/sshpass.txt
-          echo ">>> [HOÀN TẤT] Truyền toàn bộ file sang Server VPS thành công 100%!"
+          echo ">>> [HOÀN TẤT] Đồng bộ toàn bộ cấu hình và Images sang VPS thành công 100%!"
 
       - name: Kích hoạt Container & Cập nhật Subdomains trên Server
         uses: appleboy/ssh-action@v1.2.0
