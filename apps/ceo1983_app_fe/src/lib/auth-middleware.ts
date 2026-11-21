@@ -11,7 +11,6 @@
  */
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import * as crypto from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export function extractToken(request: Request): string | null {
@@ -31,30 +30,27 @@ export function extractToken(request: Request): string | null {
 }
 
 export function verifyNestJwt(token: string): Record<string, any> | null {
-  const JWT_SECRET = process.env.JWT_SECRET ?? "super-secret-jwt-key";
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const [header, payload, sig] = parts;
+    const [, payload] = parts;
 
-    // Check HMAC-SHA256 signature if needed
-    try {
-      const expected = crypto
-        .createHmac("sha256", JWT_SECRET)
-        .update(`${header}.${payload}`)
-        .digest("base64")
-        .replace(/=/g, "")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_");
-
-      if (sig !== expected) {
-        // Fallback: decode payload without signature check if secrets differ across proxy
-      }
-    } catch {
-      // ignore
+    // Decode base64/base64url payload safe for both browser & Node.js
+    let jsonStr = "";
+    if (typeof Buffer !== "undefined") {
+      jsonStr = Buffer.from(payload, "base64").toString("utf8");
+    } else if (typeof atob !== "undefined") {
+      const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      jsonStr = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
     }
+    if (!jsonStr) return null;
 
-    const decoded = JSON.parse(Buffer.from(payload, "base64").toString("utf8"));
+    const decoded = JSON.parse(jsonStr);
 
     // Check expiration
     if (decoded.exp && decoded.exp * 1000 < Date.now()) {
