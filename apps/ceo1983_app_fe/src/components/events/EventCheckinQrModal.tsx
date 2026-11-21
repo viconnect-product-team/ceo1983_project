@@ -67,6 +67,10 @@ export function EventCheckinQrModal({
   
   // 2. Link máy cục bộ HTTP (dành cho thử nghiệm localhost, cam kết không lỗi SSL)
   const localCheckinUrl = `${localOrigin}/checkin/${event.id}`;
+  // 3. Link IP 127.0.0.1 chống triệt để việc Chrome tự động ép HTTPS gây ra lỗi ERR_SSL_PROTOCOL_ERROR
+  const ip127CheckinUrl = `http://127.0.0.1:${
+    typeof window !== "undefined" && window.location.port ? window.location.port : "5173"
+  }/checkin/${event.id}`;
 
   const currentCheckinUrl = activeTab === "local" ? localCheckinUrl : prodCheckinUrl;
   const qrImageUrl = getAbsoluteQrUrl(currentCheckinUrl, 500);
@@ -192,13 +196,38 @@ export function EventCheckinQrModal({
             </a>
           </div>
 
-          {/* Cảnh báo an toàn SSL */}
+          {/* Cảnh báo an toàn SSL & Giải pháp 127.0.0.1 */}
           {activeTab === "local" && (
-            <div className="w-full max-w-md bg-amber-50 border border-amber-200 rounded-xl p-2 text-[11px] text-amber-900 flex items-center gap-2 text-left">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Ghi chú Localhost:</strong> Dùng giao thức <code>http://</code> để không bị lỗi SSL <code>ERR_SSL_PROTOCOL_ERROR</code> trên máy tính!
-              </span>
+            <div className="w-full max-w-md bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-900 space-y-1.5 text-left">
+              <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Khắc phục lỗi ERR_SSL_PROTOCOL_ERROR trên Chrome Localhost:</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Chrome thường tự động ép HTTPS khi gõ <code>localhost</code>. Nếu gặp lỗi kết nối bảo mật, hãy mở bằng địa chỉ <strong>127.0.0.1 (HTTP)</strong>:
+              </p>
+              <div className="flex items-center gap-2 pt-0.5">
+                <a
+                  href={ip127CheckinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition shadow-xs"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Mở qua 127.0.0.1:5173 (Không lỗi SSL)
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(ip127CheckinUrl);
+                    toast.success("Đã chép link 127.0.0.1!");
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold text-[10px] hover:bg-slate-50 transition"
+                >
+                  <Copy className="w-3 h-3" />
+                  Sao chép
+                </button>
+              </div>
             </div>
           )}
 

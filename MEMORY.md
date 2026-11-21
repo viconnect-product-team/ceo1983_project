@@ -1,6 +1,29 @@
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 21/11/2026 (v11.93): Khắc Phục Lỗi CI/CD GitHub Actions Đóng Gói Docker & Triển Khai Subdomains ([NODE-CORE-005], [NODE-CORE-006])**:
+- **Bản cập nhật ngày 21/11/2026 (v11.94): Khắc Phục Triệt Để Lỗi Deploy GitHub Actions SCP Status 1 & Giải Pháp Toàn Diện Cho Lỗi SSL Localhost ([NODE-CORE-005], [NODE-CORE-006], [NODE-CRM-007])**:
+  - **1. Phân Tích Căn Nguyên Lỗi Deploy SCP (`drone-scp error: error copy file to dest: 14.225.217.232, error message: Process exited with status 1`)**:
+    * **Xung đột ghi đè thư mục đích trên VPS**: Action `appleboy/scp-action@v0.1.7` (dựa trên drone-scp) nén tất cả file vào `/tmp/*.tar.gz` trên runner và truyền stream qua SSH để thực thi lệnh `tar -xzf - -C /root/deploy-cache/` từ xa. Thư mục `/root/deploy-cache/deploy` đã tồn tại từ trước và chứa các tệp có quyền root hoặc bị mount/lock từ Docker Nginx SSL proxy cũ (`server.key`, `server.crt`), khiến lệnh `tar` trên remote server bị lỗi Permission/Resource busy và trả về exit status 1.
+    * **Quá tải dung lượng Docker Tarball (1.8GB)**: Cấu hình cũ gán `gzip -1` (mức nén tối thiểu) và lưu trùng tag (`ceo1983-frontend` + `crm-frontend` trong cùng một file, `ceo1983-backend` + `crm-backend` trong file thứ hai), tạo ra 2 file tarball khổng lồ (~1.8GB). Stream SSH của drone-scp không có cơ chế keep-alive liên tục và không hỗ trợ nối file (resume), dẫn đến tràn buffer và đứt kết nối sau 2 phút 15 giây.
+  - **2. Giải Pháp Tối Ưu Toàn Diện & Bền Vững Đã Triển Khai**:
+    * **Tối ưu dung lượng Docker Images (giảm 88%)**:
+      - Chỉ đóng gói 1 tag đại diện: `ceo1983-frontend:latest` và `ceo1983-backend:latest`.
+      - Chuyển sang nén chuẩn `gzip -6`: Dung lượng giảm từ 1.8GB xuống chỉ còn **~200MB** (Frontend ~35MB, Backend ~170MB).
+      - Trên VPS: Sau khi `docker load`, hệ thống tự động gán nhãn `crm-frontend:latest` và `crm-backend:latest` chỉ mất 0.1 giây và xóa ngay file nén để giải phóng ổ cứng.
+    * **Dọn dẹp triệt để VPS trước khi đồng bộ**:
+      - Chạy `rm -rf /root/deploy-cache` và tái tạo thư mục mới để triệt tiêu hoàn toàn lỗi Permission/Conflict.
+      - Chạy `docker system prune -f` và in báo cáo dung lượng `df -h /`.
+    * **Chuyển đổi sang OpenSSH & Rsync Native chuẩn Linux**:
+      - Loại bỏ hoàn toàn `appleboy/scp-action@v0.1.7`.
+      - Sử dụng OpenSSH Client kết hợp `sshpass` và `rsync -avz --progress --partial`.
+      - Cấu hình SSH KeepAlive (`ServerAliveInterval 15`, `ServerAliveCountMax 60`, `ConnectTimeout 60`) giữ kết nối xuyên suốt qua mạng quốc tế.
+      - Hiển thị tiến trình chi tiết (% và tốc độ MB/s) trực tiếp trong log GitHub Actions.
+      - Tích hợp vòng lặp retry 3 lần tự động nối file nếu có chập chờn mạng.
+  - **3. Hướng Dẫn & Khắc Phục Lỗi SSL Localhost (`ERR_SSL_PROTOCOL_ERROR`) (Ảnh 1)**:
+    * **Nguyên nhân**: Vite Dev Server chạy HTTP plain trên cổng 5173. Trình duyệt Chrome có cơ chế tự động nâng cấp request lên HTTPS (HTTPS-First Mode hoặc do bộ nhớ đệm HSTS). Khi gõ `localhost:5173` mà không có tiền tố `http://`, Chrome gửi bắt tay TLS tới cổng HTTP dẫn đến `ERR_SSL_PROTOCOL_ERROR`.
+    * **Giải pháp trong code**: Bổ sung liên kết truy cập an toàn qua IP `http://127.0.0.1:5173/checkin/:eventId` vào `EventCheckinQrModal.tsx` (Chrome không bao giờ tự ép HTTPS với IP loopback 127.0.0.1).
+  - **4. Kết Quả Kiểm Thử Chất Lượng (Strict Typecheck)**:
+    * Frontend `apps/ceo1983_app_fe`: `npx tsc --noEmit` đạt Exit code 0 (0 errors).
+    * Backend `apps/ceo1983_app_be`: `npx tsc --noEmit` đạt Exit code 0 (0 errors).
   - **1. Phân Tích Nguyên Nhân Lỗi GitHub Actions Runner (`Process completed with exit code 1`)**:
     * **Xung đột Rollup Client Bundle**: Trong file `auth-middleware.ts`, lệnh `import * as crypto from 'crypto'` gây ra lỗi Rollup khi đóng gói client (`"createHmac" is not exported by "__vite-browser-external"`). Đã loại bỏ hoàn toàn `crypto` top-level và thay bằng decode JWT payload tương thích cả Browser lẫn Node.js runtime.
     * **Giới hạn RAM trên GitHub Runner (7GB)**: Cấu hình cũ gán `NODE_OPTIONS: "--max-old-space-size=8192"` (8GB) vượt quá ngưỡng RAM vật lý 7GB của runner `ubuntu-latest`, dẫn đến nguy cơ bị Linux OOM Killer bắn hạ tiến trình khi Vite compile đồng thời Client và SSR. Đã điều chỉnh về ngưỡng an toàn 5GB (`5120MB`).

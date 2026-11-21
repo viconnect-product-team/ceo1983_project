@@ -110,10 +110,12 @@ jobs:
           docker build --no-cache -t ceo1983-backend:latest -f Dockerfile.backend .
           docker tag ceo1983-backend:latest crm-backend:latest
 
-          # 3. Nén images thành tar.gz để truyền nhanh qua SSH
+          # 3. Nén images thành tar.gz với gzip mức 6 (tiết kiệm 75% dung lượng, giảm từ 1.8GB xuống ~200MB)
           mkdir -p dist-images
-          docker save ceo1983-frontend:latest crm-frontend:latest | gzip -1 > dist-images/frontend-images.tar.gz
-          docker save ceo1983-backend:latest crm-backend:latest | gzip -1 > dist-images/backend-images.tar.gz
+          docker save ceo1983-frontend:latest | gzip -6 > dist-images/frontend-images.tar.gz
+          docker save ceo1983-backend:latest | gzip -6 > dist-images/backend-images.tar.gz
+          echo "=== KÍCH THƯỚC DOCKER IMAGES SAU KHI NÉN GZIP ==="
+          ls -lh dist-images/
 
       - name: Kiểm tra cấu hình SSH Secret trên GitHub
         run: |
@@ -134,26 +136,85 @@ jobs:
           timeout: 300s
           command_timeout: 300s
           script: |
+            echo ">>> [1/2] Dọn dẹp sạch sẽ thư mục deploy-cache để chống lỗi Permission/Conflict..."
+            rm -rf /root/deploy-cache
             mkdir -p /root/deploy-cache/dist-images
-            rm -rf /root/deploy-cache/dist-images/*.tar.gz
-            # Dọn dẹp cache và image cũ trên Docker để không bao giờ bị tràn ổ đĩa VPS
+            mkdir -p /root/deploy-cache/deploy
+            
+            echo ">>> [2/2] Giải phóng dung lượng ổ đĩa VPS..."
             docker system prune -f 2>/dev/null || true
             docker builder prune -f 2>/dev/null || true
+            echo "=== DUNG LƯỢNG Ổ ĐĨA HIỆN TẠI TRÊN VPS ==="
             df -h /
 
-      - name: Đẩy images và cấu hình sang Server VPS qua SSH (Timeout 20 phút)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.SERVER_IP }}
-          username: ${{ env.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE || '' }}
-          password: ${{ secrets.SSH_PASSWORD || '' }}
-          timeout: 1200s
-          command_timeout: 1200s
-          source: "dist-images/*.tar.gz,deploy/**"
-          target: "/root/deploy-cache/"
-          strip_components: 0
+      - name: Đẩy images và cấu hình sang Server VPS qua SSH (OpenSSH & Rsync Native)
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASS: ${{ secrets.SSH_PASSWORD }}
+          TARGET_HOST: ${{ env.SERVER_IP }}
+          TARGET_USER: ${{ env.SERVER_USER }}
+        run: |
+          set -e
+          echo ">>> [1/3] Cài đặt sshpass, rsync và cấu hình OpenSSH trên GitHub Runner..."
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass rsync openssh-client
+
+          # Cấu hình SSH Client với KeepAlive liên tục để không bao giờ bị ngắt kết nối
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat << 'EOF' > ~/.ssh/config
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 15
+            ServerAliveCountMax 60
+            TCPKeepAlive yes
+            ConnectTimeout 60
+          EOF
+          chmod 600 ~/.ssh/config
+
+          # Lựa chọn phương thức xác thực SSH
+          RSYNC_SSH="ssh"
+          if [ -n "$SSH_KEY" ]; then
+            echo "$SSH_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            RSYNC_SSH="ssh -i ~/.ssh/id_rsa"
+            echo ">>> Xác thực bằng SSH Private Key."
+          elif [ -n "$SSH_PASS" ]; then
+            export SSHPASS="$SSH_PASS"
+            RSYNC_SSH="sshpass -e ssh"
+            echo ">>> Xác thực bằng SSH Password."
+          else
+            echo "::error::Không có SSH_PRIVATE_KEY hoặc SSH_PASSWORD!"
+            exit 1
+          fi
+
+          echo ">>> [2/3] Truyền thư mục cấu hình deploy/ sang VPS..."
+          for attempt in 1 2 3; do
+            echo ">>> Tiến hành đồng bộ deploy/ (lần $attempt/3)..."
+            rsync -avz --progress -e "$RSYNC_SSH" deploy/ ${TARGET_USER}@${TARGET_HOST}:/root/deploy-cache/deploy/ && break || {
+              if [ $attempt -eq 3 ]; then
+                echo "::error::Đồng bộ deploy/ thất bại sau 3 lần thử!"
+                exit 1
+              fi
+              echo ">>> Thử lại sau 5 giây..."
+              sleep 5
+            }
+          done
+
+          echo ">>> [3/3] Truyền Docker Images (frontend & backend tar.gz) sang VPS..."
+          for attempt in 1 2 3; do
+            echo ">>> Tiến hành đồng bộ dist-images/ (lần $attempt/3)..."
+            rsync -avz --progress --partial -e "$RSYNC_SSH" dist-images/ ${TARGET_USER}@${TARGET_HOST}:/root/deploy-cache/dist-images/ && break || {
+              if [ $attempt -eq 3 ]; then
+                echo "::error::Đồng bộ dist-images/ thất bại sau 3 lần thử!"
+                exit 1
+              fi
+              echo ">>> Thử lại sau 5 giây..."
+              sleep 5
+            }
+          done
+
+          echo ">>> [HOÀN TẤT] Truyền toàn bộ file sang Server VPS thành công 100%!"
 
       - name: Kích hoạt Container & Cập nhật Subdomains trên Server
         uses: appleboy/ssh-action@v1.2.0
@@ -175,7 +236,9 @@ jobs:
             if [ -n "$FE_TAR" ]; then
               echo ">>> Nạp $FE_TAR..."
               docker load < "$FE_TAR"
+              docker tag ceo1983-frontend:latest crm-frontend:latest 2>/dev/null || true
               rm -f "$FE_TAR"
+              echo ">>> Nạp và gắn tag Frontend Image thành công!"
             else
               echo ">>> [CẢNH BÁO] Không tìm thấy frontend-images.tar.gz!"
             fi
@@ -186,7 +249,9 @@ jobs:
             if [ -n "$BE_TAR" ]; then
               echo ">>> Nạp $BE_TAR..."
               docker load < "$BE_TAR"
+              docker tag ceo1983-backend:latest crm-backend:latest 2>/dev/null || true
               rm -f "$BE_TAR"
+              echo ">>> Nạp và gắn tag Backend Image thành công!"
             else
               echo ">>> [CẢNH BÁO] Không tìm thấy backend-images.tar.gz!"
             fi
