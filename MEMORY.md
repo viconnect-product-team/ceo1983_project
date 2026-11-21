@@ -1,5 +1,25 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:
+    * **Xác nhận**: Lỗi `WebSocket connection to wss://.../socket.io/ failed 400` **HOÀN TOÀN KHÔNG LIÊN QUAN** đến dữ liệu Check-in hay Quản lý Đăng ký Sự kiện.
+    * WebSocket chỉ phục vụ Chat nội bộ (Direct Message) và Chuông thông báo realtime (`ConnectAppGateway`). Chức năng Quản lý Đăng ký Sự kiện (`/event-registrations`) hoạt động hoàn toàn bằng **HTTP REST API** (`/api/events/with-registrations`) và auto-polling HTTP mỗi 10 giây.
+  - **2. Căn Nguyên Thực Sự Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi Sai Cột CSDL (Schema Column Mismatch)**:
+      - Trong bảng CSDL `public.event_registrations` trên máy chủ chuẩn `113.20.107.184:6432`, các cột vật lý chuẩn gồm: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `association_id`, `created_at`, `updated_at`, `checked_in_at`.
+      - Bảng này **KHÔNG CÓ các cột riêng lẻ**: `phone`, `company`, `position`, `qr_payload`, `payment_amount` (các thông tin này theo chuẩn hệ thống được đóng gói dạng JSON bên trong cột `ticket_type` và được hàm `mapRegRow` giải nén khi lấy lên giao diện).
+      - Trong các hàm `publicCheckin`, `scanTicketPayload`, và `addOrCheckinAttendee`, câu lệnh INSERT cố tình chỉ định các cột `phone, company, position, qr_payload...` khiến PostgreSQL văng lỗi `column "phone" of relation "event_registrations" does not exist`. Do nằm trong khối `try...catch`, lỗi bị nuốt âm thầm khiến không có bản ghi nào được ghi vào CSDL!
+    * **Lỗi Tra Cứu Sai Sự Kiện Khi Soát Vé QR (`scanTicketPayload`)**:
+      - Khi quét mã QR hội viên, câu lệnh tìm bản ghi không ràng buộc `r.event_id = targetEventId`, dẫn đến việc nếu hội viên đã từng tham gia một sự kiện cũ, hệ thống cập nhật vào sự kiện cũ thay vì tạo lượt đăng ký/check-in cho sự kiện hiện tại.
+    * **Lỗi Bỏ Sót Khi Điểm Danh Tại Màn Hình Checkin (`checkInAttendee`)**:
+      - Khi người dùng bấm điểm danh hội viên chưa có trong `event_registrations`, hệ thống chỉ cập nhật bảng `public.attendees` mà không tạo bản ghi tương ứng trong `event_registrations`.
+  - **3. Giải Pháp Triệt Để Đã Áp Dụng**:
+    * Chuẩn hóa toàn bộ các câu lệnh `INSERT` và `UPDATE` trong `scanTicketPayload`, `addOrCheckinAttendee`, `publicCheckin`, `checkInAttendee`:
+      - Đóng gói toàn bộ `phone`, `company`, `position`, `checkinStatus`, `seatAssignment`, `checkedIn` vào JSON `ticketMeta` và lưu vào cột chuẩn `ticket_type`.
+      - Chỉ INSERT vào các cột chắc chắn tồn tại trên CSDL `public.event_registrations` kèm `association_id` chuẩn UUID.
+      - Tự động phát hiện và gán đúng `event_id` của sự kiện đang chọn soát vé hoặc sự kiện gần nhất đang diễn ra.
+    * Typecheck `apps/ceo1983_app_be`: `tsc --noEmit` ➔ Exit code 0 (0 errors).
+
 - **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
   - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
     * Dung lượng trống trên VPS tăng vọt từ **3.3GB (98% full)** lên **25GB trống (84%)**, loại bỏ hoàn toàn nguy cơ `No space left on device` và `Broken pipe`.
@@ -2558,6 +2578,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:
+    * **Xác nhận**: Lỗi `WebSocket connection to wss://.../socket.io/ failed 400` **HOÀN TOÀN KHÔNG LIÊN QUAN** đến dữ liệu Check-in hay Quản lý Đăng ký Sự kiện.
+    * WebSocket chỉ phục vụ Chat nội bộ (Direct Message) và Chuông thông báo realtime (`ConnectAppGateway`). Chức năng Quản lý Đăng ký Sự kiện (`/event-registrations`) hoạt động hoàn toàn bằng **HTTP REST API** (`/api/events/with-registrations`) và auto-polling HTTP mỗi 10 giây.
+  - **2. Căn Nguyên Thực Sự Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi Sai Cột CSDL (Schema Column Mismatch)**:
+      - Trong bảng CSDL `public.event_registrations` trên máy chủ chuẩn `113.20.107.184:6432`, các cột vật lý chuẩn gồm: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `association_id`, `created_at`, `updated_at`, `checked_in_at`.
+      - Bảng này **KHÔNG CÓ các cột riêng lẻ**: `phone`, `company`, `position`, `qr_payload`, `payment_amount` (các thông tin này theo chuẩn hệ thống được đóng gói dạng JSON bên trong cột `ticket_type` và được hàm `mapRegRow` giải nén khi lấy lên giao diện).
+      - Trong các hàm `publicCheckin`, `scanTicketPayload`, và `addOrCheckinAttendee`, câu lệnh INSERT cố tình chỉ định các cột `phone, company, position, qr_payload...` khiến PostgreSQL văng lỗi `column "phone" of relation "event_registrations" does not exist`. Do nằm trong khối `try...catch`, lỗi bị nuốt âm thầm khiến không có bản ghi nào được ghi vào CSDL!
+    * **Lỗi Tra Cứu Sai Sự Kiện Khi Soát Vé QR (`scanTicketPayload`)**:
+      - Khi quét mã QR hội viên, câu lệnh tìm bản ghi không ràng buộc `r.event_id = targetEventId`, dẫn đến việc nếu hội viên đã từng tham gia một sự kiện cũ, hệ thống cập nhật vào sự kiện cũ thay vì tạo lượt đăng ký/check-in cho sự kiện hiện tại.
+    * **Lỗi Bỏ Sót Khi Điểm Danh Tại Màn Hình Checkin (`checkInAttendee`)**:
+      - Khi người dùng bấm điểm danh hội viên chưa có trong `event_registrations`, hệ thống chỉ cập nhật bảng `public.attendees` mà không tạo bản ghi tương ứng trong `event_registrations`.
+  - **3. Giải Pháp Triệt Để Đã Áp Dụng**:
+    * Chuẩn hóa toàn bộ các câu lệnh `INSERT` và `UPDATE` trong `scanTicketPayload`, `addOrCheckinAttendee`, `publicCheckin`, `checkInAttendee`:
+      - Đóng gói toàn bộ `phone`, `company`, `position`, `checkinStatus`, `seatAssignment`, `checkedIn` vào JSON `ticketMeta` và lưu vào cột chuẩn `ticket_type`.
+      - Chỉ INSERT vào các cột chắc chắn tồn tại trên CSDL `public.event_registrations` kèm `association_id` chuẩn UUID.
+      - Tự động phát hiện và gán đúng `event_id` của sự kiện đang chọn soát vé hoặc sự kiện gần nhất đang diễn ra.
+    * Typecheck `apps/ceo1983_app_be`: `tsc --noEmit` ➔ Exit code 0 (0 errors).
 
 - **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
   - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
@@ -6147,6 +6187,26 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
+  - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:
+    * **Xác nhận**: Lỗi `WebSocket connection to wss://.../socket.io/ failed 400` **HOÀN TOÀN KHÔNG LIÊN QUAN** đến dữ liệu Check-in hay Quản lý Đăng ký Sự kiện.
+    * WebSocket chỉ phục vụ Chat nội bộ (Direct Message) và Chuông thông báo realtime (`ConnectAppGateway`). Chức năng Quản lý Đăng ký Sự kiện (`/event-registrations`) hoạt động hoàn toàn bằng **HTTP REST API** (`/api/events/with-registrations`) và auto-polling HTTP mỗi 10 giây.
+  - **2. Căn Nguyên Thực Sự Dữ Liệu Check-in Mới Không Vào CRM**:
+    * **Lỗi Sai Cột CSDL (Schema Column Mismatch)**:
+      - Trong bảng CSDL `public.event_registrations` trên máy chủ chuẩn `113.20.107.184:6432`, các cột vật lý chuẩn gồm: `id`, `event_id`, `member_code`, `member_name`, `email`, `registered_at`, `status`, `ticket_type`, `association_id`, `created_at`, `updated_at`, `checked_in_at`.
+      - Bảng này **KHÔNG CÓ các cột riêng lẻ**: `phone`, `company`, `position`, `qr_payload`, `payment_amount` (các thông tin này theo chuẩn hệ thống được đóng gói dạng JSON bên trong cột `ticket_type` và được hàm `mapRegRow` giải nén khi lấy lên giao diện).
+      - Trong các hàm `publicCheckin`, `scanTicketPayload`, và `addOrCheckinAttendee`, câu lệnh INSERT cố tình chỉ định các cột `phone, company, position, qr_payload...` khiến PostgreSQL văng lỗi `column "phone" of relation "event_registrations" does not exist`. Do nằm trong khối `try...catch`, lỗi bị nuốt âm thầm khiến không có bản ghi nào được ghi vào CSDL!
+    * **Lỗi Tra Cứu Sai Sự Kiện Khi Soát Vé QR (`scanTicketPayload`)**:
+      - Khi quét mã QR hội viên, câu lệnh tìm bản ghi không ràng buộc `r.event_id = targetEventId`, dẫn đến việc nếu hội viên đã từng tham gia một sự kiện cũ, hệ thống cập nhật vào sự kiện cũ thay vì tạo lượt đăng ký/check-in cho sự kiện hiện tại.
+    * **Lỗi Bỏ Sót Khi Điểm Danh Tại Màn Hình Checkin (`checkInAttendee`)**:
+      - Khi người dùng bấm điểm danh hội viên chưa có trong `event_registrations`, hệ thống chỉ cập nhật bảng `public.attendees` mà không tạo bản ghi tương ứng trong `event_registrations`.
+  - **3. Giải Pháp Triệt Để Đã Áp Dụng**:
+    * Chuẩn hóa toàn bộ các câu lệnh `INSERT` và `UPDATE` trong `scanTicketPayload`, `addOrCheckinAttendee`, `publicCheckin`, `checkInAttendee`:
+      - Đóng gói toàn bộ `phone`, `company`, `position`, `checkinStatus`, `seatAssignment`, `checkedIn` vào JSON `ticketMeta` và lưu vào cột chuẩn `ticket_type`.
+      - Chỉ INSERT vào các cột chắc chắn tồn tại trên CSDL `public.event_registrations` kèm `association_id` chuẩn UUID.
+      - Tự động phát hiện và gán đúng `event_id` của sự kiện đang chọn soát vé hoặc sự kiện gần nhất đang diễn ra.
+    * Typecheck `apps/ceo1983_app_be`: `tsc --noEmit` ➔ Exit code 0 (0 errors).
 
 - **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
   - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
