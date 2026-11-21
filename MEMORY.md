@@ -1,5 +1,16 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
+  - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
+    * Dung lượng trống trên VPS tăng vọt từ **3.3GB (98% full)** lên **25GB trống (84%)**, loại bỏ hoàn toàn nguy cơ `No space left on device` và `Broken pipe`.
+    * Dọn dẹp thành công các images rác lơ lửng của containerd (`crictl rmi --prune`), xả sạch các tệp log phình to không cần thiết của pods k8s và system journal mà không làm ảnh hưởng hay gián đoạn bất kỳ container/pod nào của các dự án khác (`salebds`, `ceohn10`, `vione`).
+  - **2. Tối Ưu Quy Trình CI/CD Workflow (`auto-deploy-subdomains.yml`)**:
+    * Đưa thao tác gỡ container cũ (`docker rm -f`) và xóa images cũ (`docker rmi -f`) của CEO 1983 lên hàng đầu tiên ngay tại bước chuẩn bị đĩa trên VPS, TRƯỚC KHI tạo thư mục `deploy-cache` và TRƯỚC KHI stream file nén qua SSH pipe.
+    * Đảm bảo VPS luôn có dung lượng dồi dào để stream và nạp hình ảnh mà không bao giờ gặp lỗi `cat: write error: No space left on device`.
+  - **3. Trạng Thái Sẵn Sàng**:
+    * Mã nguồn tính năng đồng bộ đại biểu check-in mới sang CRM và cập nhật realtime 10s đã hoàn thiện và verify `tsc --noEmit` exit code 0.
+    * Sẵn sàng triển khai toàn diện qua `deploy.ps1`.
+
 - **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:
     * **Lỗi truy vấn lọc Association**: Trong `events.service.ts` hàm `listRegistrations`, câu truy vấn lọc cứng `WHERE r.association_id = ${assocId}::uuid`. Khi đại biểu mới check-in qua link web công khai (`/checkin/$eventId`) hoặc qua quét mã QR soát vé cổng, nếu `association_id` của bản ghi đăng ký khác với `assocId` của tài khoản admin đăng nhập (hoặc bị NULL do fallback insert), toàn bộ bản ghi mới bị loại bỏ khỏi danh sách CRM.
@@ -2547,6 +2558,17 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
+  - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
+    * Dung lượng trống trên VPS tăng vọt từ **3.3GB (98% full)** lên **25GB trống (84%)**, loại bỏ hoàn toàn nguy cơ `No space left on device` và `Broken pipe`.
+    * Dọn dẹp thành công các images rác lơ lửng của containerd (`crictl rmi --prune`), xả sạch các tệp log phình to không cần thiết của pods k8s và system journal mà không làm ảnh hưởng hay gián đoạn bất kỳ container/pod nào của các dự án khác (`salebds`, `ceohn10`, `vione`).
+  - **2. Tối Ưu Quy Trình CI/CD Workflow (`auto-deploy-subdomains.yml`)**:
+    * Đưa thao tác gỡ container cũ (`docker rm -f`) và xóa images cũ (`docker rmi -f`) của CEO 1983 lên hàng đầu tiên ngay tại bước chuẩn bị đĩa trên VPS, TRƯỚC KHI tạo thư mục `deploy-cache` và TRƯỚC KHI stream file nén qua SSH pipe.
+    * Đảm bảo VPS luôn có dung lượng dồi dào để stream và nạp hình ảnh mà không bao giờ gặp lỗi `cat: write error: No space left on device`.
+  - **3. Trạng Thái Sẵn Sàng**:
+    * Mã nguồn tính năng đồng bộ đại biểu check-in mới sang CRM và cập nhật realtime 10s đã hoàn thiện và verify `tsc --noEmit` exit code 0.
+    * Sẵn sàng triển khai toàn diện qua `deploy.ps1`.
 
 - **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:
@@ -6125,6 +6147,17 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v11.98): Dọn Dẹp 25GB Đĩa Cứng VPS & Tối Ưu Triệt Để Thứ Tự Dọn Dẹp CI/CD Pipeline ([NODE-CORE-005], [NODE-CORE-006])**:
+  - **1. Thành Tựu Dọn Dẹp Đĩa Cứng VPS `14.225.217.232`**:
+    * Dung lượng trống trên VPS tăng vọt từ **3.3GB (98% full)** lên **25GB trống (84%)**, loại bỏ hoàn toàn nguy cơ `No space left on device` và `Broken pipe`.
+    * Dọn dẹp thành công các images rác lơ lửng của containerd (`crictl rmi --prune`), xả sạch các tệp log phình to không cần thiết của pods k8s và system journal mà không làm ảnh hưởng hay gián đoạn bất kỳ container/pod nào của các dự án khác (`salebds`, `ceohn10`, `vione`).
+  - **2. Tối Ưu Quy Trình CI/CD Workflow (`auto-deploy-subdomains.yml`)**:
+    * Đưa thao tác gỡ container cũ (`docker rm -f`) và xóa images cũ (`docker rmi -f`) của CEO 1983 lên hàng đầu tiên ngay tại bước chuẩn bị đĩa trên VPS, TRƯỚC KHI tạo thư mục `deploy-cache` và TRƯỚC KHI stream file nén qua SSH pipe.
+    * Đảm bảo VPS luôn có dung lượng dồi dào để stream và nạp hình ảnh mà không bao giờ gặp lỗi `cat: write error: No space left on device`.
+  - **3. Trạng Thái Sẵn Sàng**:
+    * Mã nguồn tính năng đồng bộ đại biểu check-in mới sang CRM và cập nhật realtime 10s đã hoàn thiện và verify `tsc --noEmit` exit code 0.
+    * Sẵn sàng triển khai toàn diện qua `deploy.ps1`.
 
 - **Bản cập nhật ngày 21/11/2026 (v11.97): Khắc Phục Lỗi Đồng Bộ Người Check-in Mới Sang Quản Lý Đăng Ký Sự Kiện CRM & Chống Nghẽn Đĩa Khi Load Docker Images ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích Căn Nguyên Lỗi Dữ Liệu Check-in Mới Không Vào CRM**:

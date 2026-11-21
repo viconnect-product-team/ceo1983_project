@@ -136,12 +136,16 @@ jobs:
           timeout: 300s
           command_timeout: 300s
           script: |
-            echo ">>> [1/4] Dọn dẹp sạch sẽ thư mục deploy-cache và tệp nén của CEO 1983..."
+            echo ">>> [1/5] Gỡ bỏ container cũ & xóa images cũ của CEO 1983 trước để giải phóng ngay 4GB-5GB đĩa..."
+            docker rm -f crm-frontend-prod crm-backend-prod ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true
+            docker rmi -f ceo1983-frontend:latest crm-frontend:latest ceo1983-backend:latest crm-backend:latest 2>/dev/null || true
+
+            echo ">>> [2/5] Dọn dẹp sạch sẽ thư mục deploy-cache và tệp nén của CEO 1983..."
             rm -rf /root/deploy-cache /tmp/*frontend-images*.tar.gz /tmp/*backend-images*.tar.gz /root/association/*.tar.gz /root/crm/*.tar.gz
             mkdir -p /root/deploy-cache/dist-images
             mkdir -p /root/deploy-cache/deploy
-            
-            echo ">>> [2/4] Xả sạch log của riêng các container CEO 1983 & CRM..."
+
+            echo ">>> [3/5] Xả sạch log của riêng các container CEO 1983 & CRM..."
             for cid in $(docker ps -a --filter "name=ceo1983" --filter "name=crm" -q 2>/dev/null); do
               lpath=$(docker inspect --format='{{.LogPath}}' "$cid" 2>/dev/null)
               [ -n "$lpath" ] && [ -f "$lpath" ] && truncate -s 0 "$lpath" 2>/dev/null || true
@@ -149,11 +153,11 @@ jobs:
             journalctl --vacuum-size=50M 2>/dev/null || true
             apt-get clean 2>/dev/null || true
 
-            echo ">>> [3/4] Giải phóng Docker dangling images (<none>) và builder cache..."
+            echo ">>> [4/5] Giải phóng Docker dangling images (<none>) và builder cache..."
             docker image prune -f 2>/dev/null || true
             docker builder prune -f 2>/dev/null || true
 
-            echo ">>> [4/4] KIỂM TRA DUNG LƯỢNG Ổ ĐĨA TRÊN VPS SAU KHI DỌN DẸP:"
+            echo ">>> [5/5] KIỂM TRA DUNG LƯỢNG Ổ ĐĨA TRÊN VPS TRƯỚC KHI TRUYỀN FILE:"
             df -h /
 
       - name: Đẩy images và cấu hình sang Server VPS qua SSH Pipe Stream
