@@ -263,6 +263,13 @@ jobs:
           command_timeout: 1200s
           script: |
             set -e
+            echo ">>> [0/5] Giải phóng containers & images cũ của CEO 1983 để nhường chỗ trống cho Docker Daemon..."
+            docker rm -f crm-frontend-prod crm-backend-prod ceo1983-frontend-prod ceo1983-backend-prod 2>/dev/null || true
+            docker rmi -f ceo1983-frontend:latest crm-frontend:latest ceo1983-backend:latest crm-backend:latest 2>/dev/null || true
+            docker image prune -f 2>/dev/null || true
+            echo "=== DUNG LƯỢNG Ổ ĐĨA TRƯỚC KHI NẠP IMAGE MỚI ==="
+            df -h /
+
             echo ">>> [1/5] Nạp Docker Images vào Docker Daemon trên VPS..."
             cd /root/deploy-cache/
             FE_TAR=""
