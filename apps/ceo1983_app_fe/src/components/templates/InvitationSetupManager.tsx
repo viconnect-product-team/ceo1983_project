@@ -98,7 +98,7 @@ export function InvitationSetupManager() {
   // Lời dẫn & Kính gửi
   const [greetingHeader, setGreetingHeader] = useState<string>("Kính gửi: Quý Doanh nghiệp, Quý Đối tác!");
   const [greetingProse, setGreetingProse] = useState<string>(
-    "Bốn năm – một hành trình kết nối tri thức, kiến tạo giá trị và đồng hành cùng cộng đồng doanh nghiệp Việt Nam phát triển bền vững.\n\nNhân dịp Kỷ niệm 4 năm thành lập Viện Doanh Trí và Tri ân Ngày Nhà giáo Việt Nam 20/11, Viện Doanh Trí trân trọng kính mời Quý vị tham dự tọa đàm:"
+    "Một hành trình kết nối tri thức, kiến tạo giá trị và đồng hành cùng cộng đồng doanh nghiệp Việt Nam phát triển bền vững.\n\nCLB Doanh Nhân CEO 1983 (HanoiBA) trân trọng kính mời Quý vị tham dự chương trình:"
   );
   // Dải băng nhãn dưới avatar
   const [avatarRibbonText, setAvatarRibbonText] = useState<string>("★ KHÁCH MỜI ★");
@@ -119,7 +119,7 @@ export function InvitationSetupManager() {
   // Footer Kỷ niệm & Skyline
   const [anniversaryNumber, setAnniversaryNumber] = useState<string>("4");
   const [anniversaryLabel, setAnniversaryLabel] = useState<string>("NĂM");
-  const [anniversaryTitle, setAnniversaryTitle] = useState<string>("THÀNH LẬP VIỆN DOANH TRÍ (2022 - 2026)");
+  const [anniversaryTitle, setAnniversaryTitle] = useState<string>("CLB DOANH NHÂN CEO 1983 (HANOIBA)");
 
   // ── 4. CẤU HÌNH VỊ TRÍ & ẨN/XÓA CÁC TRƯỜNG THÔNG TIN TRÊN THƯ MỜI (MỖI TRƯỜNG DI CHUYỂN & XÓA ĐƯỢC) ──
   const [fieldsConfig, setFieldsConfig] = useState<Record<string, InvitationFieldConfig>>({

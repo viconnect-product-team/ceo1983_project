@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
-import { VienDoanhTriBrandBanner } from "@/components/events/VienDoanhTriBrandBanner";
+import { Ceo1983BrandBanner } from "@/components/events/Ceo1983BrandBanner";
 
 export const Route = createFileRoute("/checkin/$eventId")({
   ssr: false,
@@ -40,15 +40,15 @@ export const Route = createFileRoute("/checkin/$eventId")({
       }
     }
     if (!event) {
-      // Fallback chuẩn theo yêu cầu sự kiện Viện Doanh Trí 21/11/2026
+      // Fallback chuẩn CLB Doanh Nhân CEO 1983
       event = {
         id: params.eventId,
-        name: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
-        title: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11",
-        tagline: "Kỷ niệm 4 năm thành lập Viện Doanh Trí",
+        name: "SỰ KIỆN KẾT NỐI GIAO THƯƠNG & HỘI NGHỊ CLB DOANH NHÂN CEO 1983",
+        title: "SỰ KIỆN KẾT NỐI GIAO THƯƠNG & HỘI NGHỊ CLB DOANH NHÂN CEO 1983",
+        tagline: "CLB Doanh Nhân CEO 1983 (HanoiBA)",
         date: "2026-11-21",
-        time: "14h30 - 17h30, Thứ 7, ngày 21/11/2026",
-        location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy",
+        time: "Thứ 7, ngày 21/11/2026",
+        location: "Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)",
       };
     }
     return { event };
@@ -58,13 +58,13 @@ export const Route = createFileRoute("/checkin/$eventId")({
     meta: [
       {
         title: `Điểm Danh / Check-in: ${
-          loaderData?.event?.name || "Kỷ Niệm 4 Năm Viện Doanh Trí"
+          loaderData?.event?.name || "CLB Doanh Nhân CEO 1983"
         }`,
       },
       {
         name: "description",
         content:
-          "Form điểm danh check-in tự động sự kiện Viện Doanh Trí và Toạ đàm Doanh Nghiệp Việt 2027.",
+          "Form điểm danh check-in tự động sự kiện CLB Doanh Nhân CEO 1983 (HanoiBA).",
       },
     ],
   }),
@@ -197,18 +197,18 @@ function PublicEventCheckinPage() {
           <div className="space-y-5 animate-in zoom-in-95 duration-200">
             {/* Card thông báo thành công */}
             <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] p-8 text-center text-white relative">
+              <div className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] p-8 text-center text-white relative">
                 <div className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/60 text-white flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-300" />
+                  <CheckCircle2 className="w-12 h-12 text-amber-300" />
                 </div>
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-[#005BAC] mb-2 shadow-sm">
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white text-[#8B0000] mb-2 shadow-sm">
                   XÁC NHẬN THÀNH CÔNG
                 </span>
                 <h2 className="text-xl font-black text-white">
                   Chào mừng {result.fullName}!
                 </h2>
-                <p className="text-xs text-sky-100 mt-1 max-w-sm mx-auto">
-                  Cảm ơn Anh/Chị đã hoàn tất điểm danh tham dự sự kiện Kỷ niệm 4 năm Viện Doanh Trí.
+                <p className="text-xs text-amber-100 mt-1 max-w-sm mx-auto">
+                  Cảm ơn Anh/Chị đã hoàn tất điểm danh tham dự sự kiện của CLB Doanh Nhân CEO 1983.
                 </p>
               </div>
 
@@ -244,7 +244,7 @@ function PublicEventCheckinPage() {
 
                 {/* Thông tin đại biểu */}
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5 text-xs">
-                  <div className="font-extrabold uppercase tracking-wide text-[11px] pb-1 border-b border-slate-200 text-[#005BAC]">
+                  <div className="font-extrabold uppercase tracking-wide text-[11px] pb-1 border-b border-slate-200 text-[#8B0000]">
                     THÔNG TIN ĐẠI BIỂU ĐIỂM DANH
                   </div>
                   <div className="flex justify-between py-1">
@@ -265,32 +265,32 @@ function PublicEventCheckinPage() {
                   </div>
                   <div className="flex justify-between py-1 border-t border-dashed border-slate-200">
                     <span className="text-slate-500 font-medium">Mã đăng ký:</span>
-                    <span className="font-mono font-bold text-[#005BAC]">{result.registrationId}</span>
+                    <span className="font-mono font-bold text-[#8B0000]">{result.registrationId}</span>
                   </div>
                 </div>
 
                 {/* Thông báo email đã gửi */}
-                <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-2xl flex items-start gap-2.5 text-xs text-sky-900">
-                  <Mail className="w-4 h-4 text-[#005BAC] shrink-0 mt-0.5" />
+                <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-amber-950">
+                  <Mail className="w-4 h-4 text-[#8B0000] shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    Email cảm ơn và xác nhận điểm danh từ <strong>Viện Doanh Trí</strong> đã được gửi tức thì về hòm thư: <strong>{result.email}</strong>. Quý Anh/Chị vui lòng kiểm tra hộp thư đến (Inbox / Spam).
+                    Email cảm ơn và xác nhận điểm danh từ <strong>CLB Doanh Nhân CEO 1983</strong> đã được gửi tức thì về hòm thư: <strong>{result.email}</strong>. Quý Anh/Chị vui lòng kiểm tra hộp thư đến (Inbox / Spam).
                   </p>
                 </div>
 
                 {/* Lịch trình tóm tắt */}
                 <div className="bg-sky-50/70 border border-sky-200/60 rounded-2xl p-4 text-xs text-sky-950 space-y-2">
-                  <div className="font-bold text-[#005BAC] flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#00A859]" />
-                    CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ
+                  <div className="font-bold text-[#8B0000] flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    SỰ KIỆN KẾT NỐI GIAO THƯƠNG CLB DOANH NHÂN CEO 1983
                   </div>
                   <div className="text-[11px] text-slate-700 flex flex-col gap-1.5 pt-1 border-t border-sky-200/50">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-                      <span><strong>Thời gian:</strong> 14h30 - 17h30, Thứ 7, ngày 21/11/2026</span>
+                      <Clock className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                      <span><strong>Thời gian:</strong> Thứ 7, ngày 21/11/2026</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-                      <span><strong>Địa điểm:</strong> Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy</span>
+                      <MapPin className="w-3.5 h-3.5 text-[#003B95] shrink-0" />
+                      <span><strong>Địa điểm:</strong> Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983</span>
                     </div>
                   </div>
                 </div>
@@ -306,13 +306,13 @@ function PublicEventCheckinPage() {
               </div>
             </div>
 
-            {/* DANH SÁCH ĐẠI BIỂU ĐÃ ĐIỂM DANH SỰ KIỆN DOANH TRÍ */}
+            {/* DANH SÁCH ĐẠI BIỂU ĐÃ ĐIỂM DANH SỰ KIỆN CEO 1983 */}
             <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between">
+              <div className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] px-6 py-4 text-white flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                  <div className="text-[10px] font-bold text-amber-200 uppercase tracking-wider flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    DANH SÁCH ĐẠI BIỂU SỰ KIỆN DOANH TRÍ
+                    DANH SÁCH ĐẠI BIỂU SỰ KIỆN CEO 1983
                   </div>
                   <h3 className="text-sm font-black text-white mt-0.5">
                     Các Đại Biểu Đã Điểm Danh ({attendeeStats.checkedInCount}/{attendeeStats.total})
@@ -449,17 +449,17 @@ function PublicEventCheckinPage() {
         ) : (
           /* FORM CHECK-IN VÀ TAB CHUYỂN ĐỔI */
           <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-            {/* Header dải màu xanh chuẩn nhận diện Viện Doanh Trí (#005BAC & #00A859) */}
-            <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] p-4 sm:p-5 text-white flex items-center justify-between shadow-md relative overflow-hidden">
+            {/* Header dải 3 màu nhận diện CLB Doanh Nhân CEO 1983 (#8B0000, #003B95, #D4AF37) */}
+            <div className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] p-4 sm:p-5 text-white flex items-center justify-between shadow-md relative overflow-hidden">
               <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
               <div className="flex items-center gap-3 relative z-10">
-                <div className="w-11 h-11 rounded-2xl bg-white text-[#005BAC] font-black flex items-center justify-center text-lg shadow-md ring-2 ring-emerald-300">
-                  DT
+                <div className="w-11 h-11 rounded-2xl bg-white text-[#8B0000] font-black flex items-center justify-center text-sm shadow-md ring-2 ring-amber-300">
+                  1983
                 </div>
                 <div>
-                  <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                  <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-200 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                    VIỆN DOANH TRÍ
+                    CLB DOANH NHÂN CEO 1983 (HANOIBA)
                   </div>
                   <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
                     Cổng Check-in Điểm Danh
@@ -467,13 +467,13 @@ function PublicEventCheckinPage() {
                 </div>
               </div>
               <span className="relative z-10 px-3 py-1 rounded-full text-[11px] font-black bg-white/15 backdrop-blur-md border border-white/30 text-white shadow-xs">
-                Kỷ niệm 4 năm
+                CEO 1983
               </span>
             </div>
 
-            {/* Header thông tin sự kiện nhận diện Viện Doanh Trí chuẩn đồ họa Ảnh 1 */}
+            {/* Header thông tin sự kiện nhận diện CLB Doanh Nhân CEO 1983 */}
             <div className="bg-white p-6 sm:p-7 border-b border-slate-200">
-              <VienDoanhTriBrandBanner variant="light" showTimeAndLocation={true} />
+              <Ceo1983BrandBanner variant="light" showTimeAndLocation={true} />
             </div>
 
             {/* Tab chuyển đổi giữa Form và Danh sách đại biểu */}
@@ -739,9 +739,9 @@ function PublicEventCheckinPage() {
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
         <div className="max-w-xl mx-auto px-4 space-y-1">
-          <p className="font-bold text-[#005BAC]">VIỆN DOANH TRÍ</p>
+          <p className="font-bold text-[#8B0000]">CLB DOANH NHÂN CEO 1983 (HANOIBA)</p>
           <p className="text-[11px] text-slate-500">
-            Hotline hỗ trợ: 0988.870.888 / 0903.203.204
+            Hotline hỗ trợ: 0988.870.888 / 0903.203.204 | Email: contact@ceo1983.vn
           </p>
         </div>
       </footer>

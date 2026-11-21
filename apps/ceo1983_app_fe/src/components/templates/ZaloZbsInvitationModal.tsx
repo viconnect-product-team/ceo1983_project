@@ -51,7 +51,7 @@ export function ZaloZbsInvitationModal({
 
   // Cấu hình sự kiện & Zalo ZBS
   const [eventName, setEventName] = useState(
-    eventData?.eventName || "Kỷ niệm 4 năm thành lập Viện Doanh Trí & Ngày Nhà giáo VN 20/11",
+    eventData?.eventName || "Sự kiện Hội Nghị & Kết Nối Giao Thương CLB Doanh Nhân CEO 1983",
   );
   const [eventDate, setEventDate] = useState(eventData?.eventDate || "21/11/2026");
   const [eventLocation, setEventLocation] = useState(

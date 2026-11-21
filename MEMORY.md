@@ -1,5 +1,84 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 21/11/2026 (v12.00): Xóa Sạch Toàn Bộ Dữ Liệu Fake "Viện Doanh Trí" & Trả Lại Định Dạng Chuẩn Nhận Diện CLB Doanh Nhân CEO 1983 (HanoiBA) ([NODE-CRM-004], [NODE-CRM-005], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-002])**:
+  - **1. Xóa Sạch Toàn Bộ Dữ Liệu & Fallback Liên Quan "Viện Doanh Trí"**:
+    * **Backend (`apps/ceo1983_app_be`)**:
+      - `events.service.ts`:
+        + Loại bỏ hoàn toàn fallback query cứng `WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%'`. Hệ thống tự động truy vấn sự kiện thực tế mới nhất từ CSDL chuẩn `113.20.107.184:6432` (`ORDER BY created_at DESC LIMIT 1`).
+        + Thay thế email tự động nhận báo cáo: `process.env.CEO1983_REPORT_EMAIL || process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'banbientap@ceo1983.vn'` (thay thế fallback cũ `viendoanhtri.iem@gmail.com`).
+        + Thay thế email định danh tạm thời: `cleanPhone ? `${cleanPhone}@ceo1983.vn` : `guest_${Date.now()}@ceo1983.vn`` (thay thế `@doanhtri.vn`).
+        + Mẫu báo cáo Excel (.xlsx), Word (.docx), PDF (.pdf):
+          - Tiêu đề & Đơn vị chủ trì: Chuyển thành `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+          - Đơn vị phụ đề: `HỘI DOANH NHÂN TRẺ HÀ NỘI · GẮN KẾT - CHIA SẺ - CÙNG PHÁT TRIỂN`.
+          - Chữ ký biểu mẫu: `['NGƯỜI LẬP BIỂU', 'BAN TỔ CHỨC', 'BAN THƯ KÝ CEO 1983']`.
+          - Tên file tải xuống: `Danh_Sach_CheckIn_CEO1983_${timestamp}.xlsx / .docx / .pdf`.
+          - Màu sắc nhận diện chuẩn văn bản: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Vòng quay may mắn (Lucky Draw):
+          - Tiêu đề mặc định: `VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983`.
+          - Khẩu hiệu: `Gắn Kết - Chia Sẻ - Cùng Phát Triển (HanoiBA)`.
+          - Nhà tài trợ mặc định: `CLB Doanh Nhân CEO 1983`.
+      - `mail.service.ts`:
+        + Mẫu thư xác nhận check-in (`sendDoanhTriCheckinSuccessEmail`):
+          - Tiêu đề thư: `[CEO 1983] Cảm ơn Anh/Chị {fullName} đã check-in thành công - {eventTitle}`.
+          - Tên người gửi (fromName): `CLB Doanh Nhân CEO 1983`.
+          - Header badge & khung: Đỏ Bordeaux `#8B0000`, Xanh Navy `#003B95`, Vàng Kim `#D4AF37`.
+          - Lời cảm ơn & Chữ ký: `CLB Doanh Nhân CEO 1983 (HanoiBA)` - `contact@ceo1983.vn`.
+        + Mẫu thư báo cáo danh sách check-in (`sendCheckinReportEmail`):
+          - Tiêu đề: `[CEO 1983] Báo Cáo Check-in ({latestAttendee.fullName}): {eventName}`.
+          - Nội dung & người gửi: `Ban Thư Ký / Ban Tổ Chức CLB Doanh Nhân CEO 1983`.
+        + Mẫu thư trúng giải Lucky Draw (`sendDoanhTriLuckyDrawWinnerEmail`):
+          - Tiêu đề: `[CEO 1983] CHÚC MỪNG ANH/CHỊ {winnerName} ĐÃ TRÚNG {prizeName}!`.
+          - Logo badge: `1983`, đơn vị trao giải: `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+        + Mẫu thư mời biểu quyết (`sendPollInvitationEmail`):
+          - Chuẩn hóa toàn bộ nhận diện sang `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `voting.repository.ts` & `voting.service.ts`:
+        + Loại bỏ hàm và truy vấn `findLatestDoanhTriEvent` / `WHERE name ILIKE '%doanhtri%'`.
+        + Thay thế bằng `findLatestEvent()` truy vấn sự kiện thực tế trong hệ thống, loại bỏ mọi điều kiện lọc text giả lập.
+    * **Frontend (`apps/ceo1983_app_fe`)**:
+      - Tạo mới component `Ceo1983BrandBanner.tsx` (và alias `VienDoanhTriBrandBanner.tsx` để bảo đảm tương thích ngược):
+        + Nhận diện thương hiệu CLB Doanh Nhân CEO 1983 (HanoiBA).
+        + 3 màu sắc chuẩn thương hiệu: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Slogan: `★ GẮN KẾT — CHIA SẺ — CÙNG PHÁT TRIỂN ★`.
+      - `routes/event-registrations.tsx`:
+        + Loại bỏ fallback id `event-doanhtri-20261121`, thay bằng `EVENTS[0]?.id || "latest"`.
+        + Bỏ các bộ lọc name chứa "doanh trí", chuyển sang dùng dữ liệu sự kiện thật `EVENTS[0]`.
+        + Chữ ký xuất Excel: `["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "BAN THƯ KÝ CEO 1983"]`.
+        + Tên file download: `Danh_Sach_CheckIn_CEO1983_${Date.now()}.${ext}`.
+        + Tooltip, nút bấm: Chuẩn hóa theo thương hiệu CEO 1983.
+      - `routes/checkin.$eventId.tsx`:
+        + Header banner dải 3 màu Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Logo `1983`, tiêu đề `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Màn hình kết quả check-in thành công: Lời chúc mừng, xác nhận email, lịch trình sự kiện chuẩn CEO 1983.
+        + Footer bản quyền: `CLB DOANH NHÂN CEO 1983 (HANOIBA) | Hotline: 0988.870.888 / 0903.203.204 | Email: contact@ceo1983.vn`.
+      - `components/events/EventCheckinQrModal.tsx`:
+        + Header và khung viền QR chuyển sang gradient Đỏ Bordeaux & Xanh Navy. Logo badge `1983`.
+        + Địa điểm và hotline chuẩn: `Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `components/events/EventSendCheckinExcelModal.tsx`:
+        + Chuyển đổi toàn bộ giao diện và placeholder: `bantieptan@ceo1983.vn`.
+        + Nhận diện thương hiệu: `CLB DOANH NHÂN CEO 1983`.
+      - `routes/lucky-draw.$eventId.tsx`, `lucky-draw.tsx`, `LuckyDrawLandingPage.tsx`, `LuckyDrawWheel.tsx`:
+        + Loại bỏ ID fallback `event-doanhtri-20261121`, mặc định `latest`.
+        + Tâm vòng quay Canvas: Chuyển chữ "VIỆN DOANH TRÍ" thành "CEO 1983".
+        + Banner sân khấu, cơ cấu giải thưởng, theme, footer: Chuyển toàn bộ về `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+      - `routes/vote.$pollId.tsx` & `voting.tsx`:
+        + Tiêu đề và nội dung khảo sát: `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Header & Footer: Logo `1983`, màu nhận diện Đỏ Bordeaux & Xanh Navy.
+        + Loại bỏ bộ lọc sự kiện theo chữ "doanhtri".
+      - `components/templates/InvitationSetupManager.tsx` & `ZaloZbsInvitationModal.tsx`:
+        + Chuẩn hóa lời dẫn và tiêu đề kỷ niệm theo CLB Doanh Nhân CEO 1983.
+  - **2. Giữ Trọn Vẹn 100% Tính Năng Hệ Thống Hoạt Động Bình Thường**:
+    * Quét mã QR Check-in công khai cho khách / đại biểu (Zalo, Camera).
+    * Phân loại check-in 30 phút: Đúng giờ (`on_time`) vs Muộn (`late`).
+    * Tự động xuất và gửi báo cáo đầy đủ 3 định dạng (.xlsx, .docx, .pdf) qua email.
+    * Tự động đồng bộ đại biểu check-in mới vào bảng `event_registrations` trên CSDL `113.20.107.184:6432`.
+    * Tự động cập nhật danh sách realtime 10 giây trên CRM.
+    * Vòng quay may mắn (Lucky Draw) quay số realtime và tự động gửi email trúng giải.
+    * Khảo sát & Biểu quyết (Voting/Polls) trực tuyến cho đại biểu đã check-in.
+  - **3. Kiểm Tra Chất Lượng Mã Nguồn (Strict Typecheck)**:
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+
+
 - **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:
     * **Xác nhận**: Lỗi `WebSocket connection to wss://.../socket.io/ failed 400` **HOÀN TOÀN KHÔNG LIÊN QUAN** đến dữ liệu Check-in hay Quản lý Đăng ký Sự kiện.
@@ -2578,6 +2657,85 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v12.00): Xóa Sạch Toàn Bộ Dữ Liệu Fake "Viện Doanh Trí" & Trả Lại Định Dạng Chuẩn Nhận Diện CLB Doanh Nhân CEO 1983 (HanoiBA) ([NODE-CRM-004], [NODE-CRM-005], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-002])**:
+  - **1. Xóa Sạch Toàn Bộ Dữ Liệu & Fallback Liên Quan "Viện Doanh Trí"**:
+    * **Backend (`apps/ceo1983_app_be`)**:
+      - `events.service.ts`:
+        + Loại bỏ hoàn toàn fallback query cứng `WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%'`. Hệ thống tự động truy vấn sự kiện thực tế mới nhất từ CSDL chuẩn `113.20.107.184:6432` (`ORDER BY created_at DESC LIMIT 1`).
+        + Thay thế email tự động nhận báo cáo: `process.env.CEO1983_REPORT_EMAIL || process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'banbientap@ceo1983.vn'` (thay thế fallback cũ `viendoanhtri.iem@gmail.com`).
+        + Thay thế email định danh tạm thời: `cleanPhone ? `${cleanPhone}@ceo1983.vn` : `guest_${Date.now()}@ceo1983.vn`` (thay thế `@doanhtri.vn`).
+        + Mẫu báo cáo Excel (.xlsx), Word (.docx), PDF (.pdf):
+          - Tiêu đề & Đơn vị chủ trì: Chuyển thành `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+          - Đơn vị phụ đề: `HỘI DOANH NHÂN TRẺ HÀ NỘI · GẮN KẾT - CHIA SẺ - CÙNG PHÁT TRIỂN`.
+          - Chữ ký biểu mẫu: `['NGƯỜI LẬP BIỂU', 'BAN TỔ CHỨC', 'BAN THƯ KÝ CEO 1983']`.
+          - Tên file tải xuống: `Danh_Sach_CheckIn_CEO1983_${timestamp}.xlsx / .docx / .pdf`.
+          - Màu sắc nhận diện chuẩn văn bản: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Vòng quay may mắn (Lucky Draw):
+          - Tiêu đề mặc định: `VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983`.
+          - Khẩu hiệu: `Gắn Kết - Chia Sẻ - Cùng Phát Triển (HanoiBA)`.
+          - Nhà tài trợ mặc định: `CLB Doanh Nhân CEO 1983`.
+      - `mail.service.ts`:
+        + Mẫu thư xác nhận check-in (`sendDoanhTriCheckinSuccessEmail`):
+          - Tiêu đề thư: `[CEO 1983] Cảm ơn Anh/Chị {fullName} đã check-in thành công - {eventTitle}`.
+          - Tên người gửi (fromName): `CLB Doanh Nhân CEO 1983`.
+          - Header badge & khung: Đỏ Bordeaux `#8B0000`, Xanh Navy `#003B95`, Vàng Kim `#D4AF37`.
+          - Lời cảm ơn & Chữ ký: `CLB Doanh Nhân CEO 1983 (HanoiBA)` - `contact@ceo1983.vn`.
+        + Mẫu thư báo cáo danh sách check-in (`sendCheckinReportEmail`):
+          - Tiêu đề: `[CEO 1983] Báo Cáo Check-in ({latestAttendee.fullName}): {eventName}`.
+          - Nội dung & người gửi: `Ban Thư Ký / Ban Tổ Chức CLB Doanh Nhân CEO 1983`.
+        + Mẫu thư trúng giải Lucky Draw (`sendDoanhTriLuckyDrawWinnerEmail`):
+          - Tiêu đề: `[CEO 1983] CHÚC MỪNG ANH/CHỊ {winnerName} ĐÃ TRÚNG {prizeName}!`.
+          - Logo badge: `1983`, đơn vị trao giải: `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+        + Mẫu thư mời biểu quyết (`sendPollInvitationEmail`):
+          - Chuẩn hóa toàn bộ nhận diện sang `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `voting.repository.ts` & `voting.service.ts`:
+        + Loại bỏ hàm và truy vấn `findLatestDoanhTriEvent` / `WHERE name ILIKE '%doanhtri%'`.
+        + Thay thế bằng `findLatestEvent()` truy vấn sự kiện thực tế trong hệ thống, loại bỏ mọi điều kiện lọc text giả lập.
+    * **Frontend (`apps/ceo1983_app_fe`)**:
+      - Tạo mới component `Ceo1983BrandBanner.tsx` (và alias `VienDoanhTriBrandBanner.tsx` để bảo đảm tương thích ngược):
+        + Nhận diện thương hiệu CLB Doanh Nhân CEO 1983 (HanoiBA).
+        + 3 màu sắc chuẩn thương hiệu: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Slogan: `★ GẮN KẾT — CHIA SẺ — CÙNG PHÁT TRIỂN ★`.
+      - `routes/event-registrations.tsx`:
+        + Loại bỏ fallback id `event-doanhtri-20261121`, thay bằng `EVENTS[0]?.id || "latest"`.
+        + Bỏ các bộ lọc name chứa "doanh trí", chuyển sang dùng dữ liệu sự kiện thật `EVENTS[0]`.
+        + Chữ ký xuất Excel: `["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "BAN THƯ KÝ CEO 1983"]`.
+        + Tên file download: `Danh_Sach_CheckIn_CEO1983_${Date.now()}.${ext}`.
+        + Tooltip, nút bấm: Chuẩn hóa theo thương hiệu CEO 1983.
+      - `routes/checkin.$eventId.tsx`:
+        + Header banner dải 3 màu Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Logo `1983`, tiêu đề `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Màn hình kết quả check-in thành công: Lời chúc mừng, xác nhận email, lịch trình sự kiện chuẩn CEO 1983.
+        + Footer bản quyền: `CLB DOANH NHÂN CEO 1983 (HANOIBA) | Hotline: 0988.870.888 / 0903.203.204 | Email: contact@ceo1983.vn`.
+      - `components/events/EventCheckinQrModal.tsx`:
+        + Header và khung viền QR chuyển sang gradient Đỏ Bordeaux & Xanh Navy. Logo badge `1983`.
+        + Địa điểm và hotline chuẩn: `Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `components/events/EventSendCheckinExcelModal.tsx`:
+        + Chuyển đổi toàn bộ giao diện và placeholder: `bantieptan@ceo1983.vn`.
+        + Nhận diện thương hiệu: `CLB DOANH NHÂN CEO 1983`.
+      - `routes/lucky-draw.$eventId.tsx`, `lucky-draw.tsx`, `LuckyDrawLandingPage.tsx`, `LuckyDrawWheel.tsx`:
+        + Loại bỏ ID fallback `event-doanhtri-20261121`, mặc định `latest`.
+        + Tâm vòng quay Canvas: Chuyển chữ "VIỆN DOANH TRÍ" thành "CEO 1983".
+        + Banner sân khấu, cơ cấu giải thưởng, theme, footer: Chuyển toàn bộ về `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+      - `routes/vote.$pollId.tsx` & `voting.tsx`:
+        + Tiêu đề và nội dung khảo sát: `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Header & Footer: Logo `1983`, màu nhận diện Đỏ Bordeaux & Xanh Navy.
+        + Loại bỏ bộ lọc sự kiện theo chữ "doanhtri".
+      - `components/templates/InvitationSetupManager.tsx` & `ZaloZbsInvitationModal.tsx`:
+        + Chuẩn hóa lời dẫn và tiêu đề kỷ niệm theo CLB Doanh Nhân CEO 1983.
+  - **2. Giữ Trọn Vẹn 100% Tính Năng Hệ Thống Hoạt Động Bình Thường**:
+    * Quét mã QR Check-in công khai cho khách / đại biểu (Zalo, Camera).
+    * Phân loại check-in 30 phút: Đúng giờ (`on_time`) vs Muộn (`late`).
+    * Tự động xuất và gửi báo cáo đầy đủ 3 định dạng (.xlsx, .docx, .pdf) qua email.
+    * Tự động đồng bộ đại biểu check-in mới vào bảng `event_registrations` trên CSDL `113.20.107.184:6432`.
+    * Tự động cập nhật danh sách realtime 10 giây trên CRM.
+    * Vòng quay may mắn (Lucky Draw) quay số realtime và tự động gửi email trúng giải.
+    * Khảo sát & Biểu quyết (Voting/Polls) trực tuyến cho đại biểu đã check-in.
+  - **3. Kiểm Tra Chất Lượng Mã Nguồn (Strict Typecheck)**:
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+
 
 - **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:
@@ -6187,6 +6345,85 @@
      - Tuân thủ nghiêm ngặt STRICT RULE 1: Tuyệt đối không tự động chạy `git push` hay `git commit`.
 
 # System Memory & Architecture
+
+- **Bản cập nhật ngày 21/11/2026 (v12.00): Xóa Sạch Toàn Bộ Dữ Liệu Fake "Viện Doanh Trí" & Trả Lại Định Dạng Chuẩn Nhận Diện CLB Doanh Nhân CEO 1983 (HanoiBA) ([NODE-CRM-004], [NODE-CRM-005], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-002])**:
+  - **1. Xóa Sạch Toàn Bộ Dữ Liệu & Fallback Liên Quan "Viện Doanh Trí"**:
+    * **Backend (`apps/ceo1983_app_be`)**:
+      - `events.service.ts`:
+        + Loại bỏ hoàn toàn fallback query cứng `WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%'`. Hệ thống tự động truy vấn sự kiện thực tế mới nhất từ CSDL chuẩn `113.20.107.184:6432` (`ORDER BY created_at DESC LIMIT 1`).
+        + Thay thế email tự động nhận báo cáo: `process.env.CEO1983_REPORT_EMAIL || process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'banbientap@ceo1983.vn'` (thay thế fallback cũ `viendoanhtri.iem@gmail.com`).
+        + Thay thế email định danh tạm thời: `cleanPhone ? `${cleanPhone}@ceo1983.vn` : `guest_${Date.now()}@ceo1983.vn`` (thay thế `@doanhtri.vn`).
+        + Mẫu báo cáo Excel (.xlsx), Word (.docx), PDF (.pdf):
+          - Tiêu đề & Đơn vị chủ trì: Chuyển thành `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+          - Đơn vị phụ đề: `HỘI DOANH NHÂN TRẺ HÀ NỘI · GẮN KẾT - CHIA SẺ - CÙNG PHÁT TRIỂN`.
+          - Chữ ký biểu mẫu: `['NGƯỜI LẬP BIỂU', 'BAN TỔ CHỨC', 'BAN THƯ KÝ CEO 1983']`.
+          - Tên file tải xuống: `Danh_Sach_CheckIn_CEO1983_${timestamp}.xlsx / .docx / .pdf`.
+          - Màu sắc nhận diện chuẩn văn bản: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Vòng quay may mắn (Lucky Draw):
+          - Tiêu đề mặc định: `VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983`.
+          - Khẩu hiệu: `Gắn Kết - Chia Sẻ - Cùng Phát Triển (HanoiBA)`.
+          - Nhà tài trợ mặc định: `CLB Doanh Nhân CEO 1983`.
+      - `mail.service.ts`:
+        + Mẫu thư xác nhận check-in (`sendDoanhTriCheckinSuccessEmail`):
+          - Tiêu đề thư: `[CEO 1983] Cảm ơn Anh/Chị {fullName} đã check-in thành công - {eventTitle}`.
+          - Tên người gửi (fromName): `CLB Doanh Nhân CEO 1983`.
+          - Header badge & khung: Đỏ Bordeaux `#8B0000`, Xanh Navy `#003B95`, Vàng Kim `#D4AF37`.
+          - Lời cảm ơn & Chữ ký: `CLB Doanh Nhân CEO 1983 (HanoiBA)` - `contact@ceo1983.vn`.
+        + Mẫu thư báo cáo danh sách check-in (`sendCheckinReportEmail`):
+          - Tiêu đề: `[CEO 1983] Báo Cáo Check-in ({latestAttendee.fullName}): {eventName}`.
+          - Nội dung & người gửi: `Ban Thư Ký / Ban Tổ Chức CLB Doanh Nhân CEO 1983`.
+        + Mẫu thư trúng giải Lucky Draw (`sendDoanhTriLuckyDrawWinnerEmail`):
+          - Tiêu đề: `[CEO 1983] CHÚC MỪNG ANH/CHỊ {winnerName} ĐÃ TRÚNG {prizeName}!`.
+          - Logo badge: `1983`, đơn vị trao giải: `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+        + Mẫu thư mời biểu quyết (`sendPollInvitationEmail`):
+          - Chuẩn hóa toàn bộ nhận diện sang `CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `voting.repository.ts` & `voting.service.ts`:
+        + Loại bỏ hàm và truy vấn `findLatestDoanhTriEvent` / `WHERE name ILIKE '%doanhtri%'`.
+        + Thay thế bằng `findLatestEvent()` truy vấn sự kiện thực tế trong hệ thống, loại bỏ mọi điều kiện lọc text giả lập.
+    * **Frontend (`apps/ceo1983_app_fe`)**:
+      - Tạo mới component `Ceo1983BrandBanner.tsx` (và alias `VienDoanhTriBrandBanner.tsx` để bảo đảm tương thích ngược):
+        + Nhận diện thương hiệu CLB Doanh Nhân CEO 1983 (HanoiBA).
+        + 3 màu sắc chuẩn thương hiệu: Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Slogan: `★ GẮN KẾT — CHIA SẺ — CÙNG PHÁT TRIỂN ★`.
+      - `routes/event-registrations.tsx`:
+        + Loại bỏ fallback id `event-doanhtri-20261121`, thay bằng `EVENTS[0]?.id || "latest"`.
+        + Bỏ các bộ lọc name chứa "doanh trí", chuyển sang dùng dữ liệu sự kiện thật `EVENTS[0]`.
+        + Chữ ký xuất Excel: `["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "BAN THƯ KÝ CEO 1983"]`.
+        + Tên file download: `Danh_Sach_CheckIn_CEO1983_${Date.now()}.${ext}`.
+        + Tooltip, nút bấm: Chuẩn hóa theo thương hiệu CEO 1983.
+      - `routes/checkin.$eventId.tsx`:
+        + Header banner dải 3 màu Đỏ Bordeaux (`#8B0000`), Xanh Navy (`#003B95`), Vàng Kim (`#D4AF37`).
+        + Logo `1983`, tiêu đề `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Màn hình kết quả check-in thành công: Lời chúc mừng, xác nhận email, lịch trình sự kiện chuẩn CEO 1983.
+        + Footer bản quyền: `CLB DOANH NHÂN CEO 1983 (HANOIBA) | Hotline: 0988.870.888 / 0903.203.204 | Email: contact@ceo1983.vn`.
+      - `components/events/EventCheckinQrModal.tsx`:
+        + Header và khung viền QR chuyển sang gradient Đỏ Bordeaux & Xanh Navy. Logo badge `1983`.
+        + Địa điểm và hotline chuẩn: `Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)`.
+      - `components/events/EventSendCheckinExcelModal.tsx`:
+        + Chuyển đổi toàn bộ giao diện và placeholder: `bantieptan@ceo1983.vn`.
+        + Nhận diện thương hiệu: `CLB DOANH NHÂN CEO 1983`.
+      - `routes/lucky-draw.$eventId.tsx`, `lucky-draw.tsx`, `LuckyDrawLandingPage.tsx`, `LuckyDrawWheel.tsx`:
+        + Loại bỏ ID fallback `event-doanhtri-20261121`, mặc định `latest`.
+        + Tâm vòng quay Canvas: Chuyển chữ "VIỆN DOANH TRÍ" thành "CEO 1983".
+        + Banner sân khấu, cơ cấu giải thưởng, theme, footer: Chuyển toàn bộ về `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+      - `routes/vote.$pollId.tsx` & `voting.tsx`:
+        + Tiêu đề và nội dung khảo sát: `CLB DOANH NHÂN CEO 1983 (HANOIBA)`.
+        + Header & Footer: Logo `1983`, màu nhận diện Đỏ Bordeaux & Xanh Navy.
+        + Loại bỏ bộ lọc sự kiện theo chữ "doanhtri".
+      - `components/templates/InvitationSetupManager.tsx` & `ZaloZbsInvitationModal.tsx`:
+        + Chuẩn hóa lời dẫn và tiêu đề kỷ niệm theo CLB Doanh Nhân CEO 1983.
+  - **2. Giữ Trọn Vẹn 100% Tính Năng Hệ Thống Hoạt Động Bình Thường**:
+    * Quét mã QR Check-in công khai cho khách / đại biểu (Zalo, Camera).
+    * Phân loại check-in 30 phút: Đúng giờ (`on_time`) vs Muộn (`late`).
+    * Tự động xuất và gửi báo cáo đầy đủ 3 định dạng (.xlsx, .docx, .pdf) qua email.
+    * Tự động đồng bộ đại biểu check-in mới vào bảng `event_registrations` trên CSDL `113.20.107.184:6432`.
+    * Tự động cập nhật danh sách realtime 10 giây trên CRM.
+    * Vòng quay may mắn (Lucky Draw) quay số realtime và tự động gửi email trúng giải.
+    * Khảo sát & Biểu quyết (Voting/Polls) trực tuyến cho đại biểu đã check-in.
+  - **3. Kiểm Tra Chất Lượng Mã Nguồn (Strict Typecheck)**:
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_fe`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+
 
 - **Bản cập nhật ngày 21/11/2026 (v11.99): Khắc Phục Triệt Để Căn Nguyên Check-in Không Lưu Vào CSDL Bảng `event_registrations` ([NODE-CRM-007], [NODE-APP-010], [NODE-CORE-005])**:
   - **1. Phân Tích & Xác Nhận Về Lỗi WebSocket**:

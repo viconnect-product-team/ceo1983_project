@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAbsoluteQrUrl } from "@/lib/qr";
-import { VienDoanhTriBrandBanner } from "./VienDoanhTriBrandBanner";
+import { Ceo1983BrandBanner } from "./Ceo1983BrandBanner";
 
 interface EventCheckinQrModalProps {
   open: boolean;
@@ -62,7 +62,7 @@ export function EventCheckinQrModal({
 
   if (!open) return null;
 
-  // 1. Link chính thức HTTPS của Viện Doanh Trí (dùng cho in ấn, quét Zalo, khách mời)
+  // 1. Link chính thức HTTPS của CLB Doanh Nhân CEO 1983 (dùng cho in ấn, quét Zalo, khách mời)
   const prodCheckinUrl = `https://crm.ceo1983.viconnect.vn/checkin/${event.id}`;
   
   // 2. Link máy cục bộ HTTP (dành cho thử nghiệm localhost, cam kết không lỗi SSL)
@@ -78,7 +78,7 @@ export function EventCheckinQrModal({
   const eventName =
     event.name ||
     event.title ||
-    "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN 20/11";
+    "SỰ KIỆN KẾT NỐI GIAO THƯƠNG CLB DOANH NHÂN CEO 1983";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentCheckinUrl);
@@ -108,16 +108,16 @@ export function EventCheckinQrModal({
           isFullscreen ? "max-w-4xl h-[95vh]" : "max-w-xl"
         } bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-300 max-h-[92vh]`}
       >
-        {/* Top Header Viện Doanh Trí */}
-        <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between shadow-md shrink-0">
+        {/* Top Header CEO 1983 */}
+        <div className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] px-6 py-4 text-white flex items-center justify-between shadow-md shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md text-white font-black flex items-center justify-center text-lg shadow-lg ring-2 ring-white/40">
-              DT
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md text-white font-black flex items-center justify-center text-sm shadow-lg ring-2 ring-amber-300">
+              1983
             </div>
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-emerald-300" />
-                VIỆN DOANH TRÍ · QUẦY ĐÓN TIẾP & ĐIỂM DANH
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-200 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-300" />
+                CLB DOANH NHÂN CEO 1983 (HANOIBA)
               </span>
               <h2 className="text-base sm:text-lg font-bold leading-tight line-clamp-1">
                 Mã QR Quét Check-in Điểm Danh
@@ -143,9 +143,9 @@ export function EventCheckinQrModal({
 
         {/* Modal Body */}
         <div className="p-5 sm:p-6 text-center space-y-4 overflow-y-auto flex-1 flex flex-col items-center">
-          {/* Banner Nhận diện Viện Doanh Trí chuẩn Ảnh 1 */}
+          {/* Banner Nhận diện CLB Doanh Nhân CEO 1983 */}
           <div className="w-full bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
-            <VienDoanhTriBrandBanner variant="light" />
+            <Ceo1983BrandBanner variant="light" />
           </div>
 
           {/* Tab chuyển đổi môi trường QR (Chính Thức HTTPS vs Localhost HTTP) */}
@@ -155,11 +155,11 @@ export function EventCheckinQrModal({
               onClick={() => setActiveTab("prod")}
               className={`flex-1 py-1.5 px-2.5 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === "prod"
-                  ? "bg-white text-[#005BAC] shadow-sm border border-slate-200"
+                  ? "bg-white text-[#8B0000] shadow-sm border border-slate-200"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Globe className="w-3.5 h-3.5 text-[#005BAC]" />
+              <Globe className="w-3.5 h-3.5 text-[#8B0000]" />
               <span>🌐 Chính Thức (HTTPS)</span>
             </button>
             <button
@@ -232,8 +232,8 @@ export function EventCheckinQrModal({
           )}
 
           {/* Khung trình chiếu mã QR */}
-          <div className="relative p-4 bg-white rounded-3xl border-2 border-dashed border-[#005BAC] shadow-xl flex flex-col items-center justify-center group">
-            <div className="bg-gradient-to-b from-sky-50 to-white p-3 rounded-2xl border border-sky-100">
+          <div className="relative p-4 bg-white rounded-3xl border-2 border-dashed border-[#8B0000] shadow-xl flex flex-col items-center justify-center group">
+            <div className="bg-gradient-to-b from-amber-50 to-white p-3 rounded-2xl border border-amber-100">
               <img
                 src={qrImageUrl}
                 alt="Mã QR Check-in Sự Kiện"
@@ -242,8 +242,8 @@ export function EventCheckinQrModal({
                 } object-contain rounded-xl transition-transform duration-200`}
               />
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#005BAC]">
-              <QrCode className="w-4 h-4 animate-pulse text-[#00A859]" />
+            <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#8B0000]">
+              <QrCode className="w-4 h-4 animate-pulse text-[#D4AF37]" />
               <span>Quét bằng ứng dụng ZALO hoặc MỌI MÁY ẢNH để Check-in</span>
             </div>
           </div>
@@ -251,12 +251,12 @@ export function EventCheckinQrModal({
           {/* Hotline & Địa điểm */}
           <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 text-left space-y-1">
             <div className="flex items-center gap-2 font-semibold text-slate-800">
-              <MapPin className="w-3.5 h-3.5 text-[#00A859] shrink-0" />
-              <span>Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội</span>
+              <MapPin className="w-3.5 h-3.5 text-[#003B95] shrink-0" />
+              <span>Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)</span>
             </div>
             <div className="flex items-center gap-2 font-medium text-slate-600">
-              <Phone className="w-3.5 h-3.5 text-[#005BAC] shrink-0" />
-              <span>Hotline hỗ trợ Ban Tổ Chức: 0988.870.888 / 0903.203.204</span>
+              <Phone className="w-3.5 h-3.5 text-[#8B0000] shrink-0" />
+              <span>Hotline hỗ trợ Ban Thư Ký: 0988.870.888 / 0903.203.204</span>
             </div>
           </div>
 
@@ -281,9 +281,9 @@ export function EventCheckinQrModal({
 
             <button
               onClick={handleDownloadQr}
-              className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition shadow-sm cursor-pointer"
+              className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition shadow-sm cursor-pointer"
             >
-              <Download className="w-4 h-4 text-emerald-600" />
+              <Download className="w-4 h-4 text-[#8B0000]" />
               <span>Tải Ảnh QR PNG</span>
             </button>
 
@@ -291,7 +291,7 @@ export function EventCheckinQrModal({
               href={currentCheckinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] hover:from-[#004b99] hover:to-[#00964e] text-white text-xs font-bold transition shadow-md cursor-pointer"
+              className="flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] hover:from-[#700000] hover:to-[#002b6d] text-white text-xs font-bold transition shadow-md cursor-pointer"
             >
               <ExternalLink className="w-4 h-4" />
               <span>Mở Form Check-in</span>

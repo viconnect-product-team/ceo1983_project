@@ -182,7 +182,7 @@ export class EventsController {
   }
 
   /**
-   * Danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện (Doanh Trí / Toạ đàm)
+   * Danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện CLB Doanh Nhân CEO 1983
    */
   @Get(':id/public-attendees')
   async getPublicAttendees(@Param('id') id: string) {
@@ -269,7 +269,7 @@ export class EventsController {
    * Check-in sự kiện công khai dành cho khách quét mã QR Zalo hoặc ứng dụng khác
    * Yêu cầu các trường: Tên, email, chức danh, công ty
    * Phân loại: tối thiểu trong 30 phút là đúng giờ ('on_time'), sau 30 phút là muộn ('late')
-   * Lập tức gửi email xác nhận thuộc Viện Doanh Trí về email người tham dự
+   * Lập tức gửi email xác nhận thuộc CLB Doanh Nhân CEO 1983 về email người tham dự
    */
   @Post(':id/public-checkin')
   async publicCheckin(@Param('id') id: string, @Body() body: any) {

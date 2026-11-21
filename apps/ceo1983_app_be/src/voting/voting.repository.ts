@@ -560,20 +560,22 @@ export class VotingRepository {
       SELECT r.id, r.member_name, r.email, r.phone, r.company, r.position, r.checked_in_at
       FROM public.event_registrations r
       LEFT JOIN public.events e ON r.event_id = e.id
-      WHERE (e.name ILIKE '%doanhtri%' OR e.title ILIKE '%doanhtri%' OR r.event_id LIKE '%doanhtri%')
-        AND r.checked_in_at IS NOT NULL
+      WHERE r.checked_in_at IS NOT NULL
         AND r.status != 'cancelled'
       ORDER BY r.checked_in_at DESC
     `.catch(() => []);
   }
 
-  async findLatestDoanhTriEvent(): Promise<any[]> {
+  async findLatestEvent(): Promise<any[]> {
     return this.prisma.$queryRaw<any[]>`
       SELECT id, name, title, date, location
       FROM public.events
-      WHERE name ILIKE '%doanhtri%' OR title ILIKE '%doanhtri%' OR id LIKE '%doanhtri%'
       ORDER BY created_at DESC
       LIMIT 1
     `.catch(() => []);
+  }
+
+  async findLatestDoanhTriEvent(): Promise<any[]> {
+    return this.findLatestEvent();
   }
 }
