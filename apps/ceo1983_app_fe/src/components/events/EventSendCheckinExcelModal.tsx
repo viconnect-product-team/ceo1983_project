@@ -35,7 +35,7 @@ export function EventSendCheckinExcelModal({
   totalAttendees = 0,
 }: EventSendCheckinExcelModalProps) {
   const [selectedEventId, setSelectedEventId] = useState<string>(
-    eventId && eventId !== "all" ? eventId : "event-doanhtri-20261121"
+    eventId && eventId !== "all" ? eventId : (events[0]?.id || "all")
   );
   const [email, setEmail] = useState("");
   const [selectedFormat, setSelectedFormat] = useState<"all" | "excel" | "word" | "pdf">("all");
@@ -47,20 +47,14 @@ export function EventSendCheckinExcelModal({
     if (eventId && eventId !== "all") {
       setSelectedEventId(eventId);
     } else if (events && events.length > 0) {
-      const dt = events.find(
-        (e) =>
-          e.id === "event-doanhtri-20261121" ||
-          (e.name && e.name.toLowerCase().includes("doanh trí")) ||
-          (e.title && e.title.toLowerCase().includes("doanh trí"))
-      );
-      setSelectedEventId(dt ? dt.id : events[0].id);
+      setSelectedEventId(events[0].id);
     }
   }, [eventId, events]);
 
   if (!open) return null;
 
   const currentEvent = events.find((e) => e.id === selectedEventId);
-  const currentEventName = currentEvent?.name || currentEvent?.title || eventName || "Kỷ niệm 4 năm Viện Doanh Trí";
+  const currentEventName = currentEvent?.name || currentEvent?.title || eventName || "Sự kiện CLB Doanh Nhân CEO 1983";
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +66,7 @@ export function EventSendCheckinExcelModal({
 
     setSending(true);
     try {
-      const targetId = selectedEventId || eventId || "event-doanhtri-20261121";
+      const targetId = selectedEventId || eventId || (events[0]?.id || "latest");
       const res = await fetchNestApi<any>(
         `/events/${targetId}/send-checkin-report-email`,
         {
@@ -104,7 +98,7 @@ export function EventSendCheckinExcelModal({
   const handleDirectDownload = async (fmt: "excel" | "word" | "pdf") => {
     setDownloading(fmt);
     try {
-      const targetId = selectedEventId || eventId || "event-doanhtri-20261121";
+      const targetId = selectedEventId || eventId || (events[0]?.id || "latest");
       const res = await fetch(`/api/events/${targetId}/export-checkin-file?format=${fmt}`, {
         method: "GET",
       });
@@ -112,7 +106,7 @@ export function EventSendCheckinExcelModal({
 
       const blob = await res.blob();
       const ext = fmt === "word" ? "docx" : fmt === "pdf" ? "pdf" : "xlsx";
-      const filename = `Danh_Sach_CheckIn_Vien_Doanh_Tri_${Date.now()}.${ext}`;
+      const filename = `Danh_Sach_CheckIn_CEO1983_${Date.now()}.${ext}`;
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -134,15 +128,15 @@ export function EventSendCheckinExcelModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-        {/* Header Viện Doanh Trí (Chuẩn nhận diện thương hiệu Xanh dương - Xanh lá) */}
-        <div className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-6 py-4 text-white flex items-center justify-between">
+        {/* Header CLB Doanh Nhân CEO 1983 (#8B0000 - #003B95 - #D4AF37) */}
+        <div className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/50 text-white flex items-center justify-center font-black text-sm shadow-sm">
-              DT
+            <div className="w-9 h-9 rounded-xl bg-white/20 border border-white/50 text-white flex items-center justify-center font-black text-xs shadow-sm">
+              1983
             </div>
             <div>
-              <div className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
-                VIỆN DOANH TRÍ
+              <div className="text-[10px] font-bold text-amber-200 uppercase tracking-wider">
+                CLB DOANH NHÂN CEO 1983
               </div>
               <h3 className="text-sm font-bold text-white">Xuất & Gửi Danh Sách Check-in</h3>
             </div>
@@ -176,14 +170,14 @@ export function EventSendCheckinExcelModal({
                 Hỗ trợ đầy đủ 3 định dạng: Word, PDF, Excel
               </p>
               <p className="text-[11px] text-slate-600">
-                Tất cả các file đều có cột Thời gian check-in chi tiết, phân loại Đúng giờ (trong 30 phút đầu) vs Check-in muộn, và header tiêu đề trang trọng của Viện Doanh Trí.
+                Tất cả các file đều có cột Thời gian check-in chi tiết, phân loại Đúng giờ (trong 30 phút đầu) vs Check-in muộn, và header tiêu đề trang trọng của CLB Doanh Nhân CEO 1983.
               </p>
             </div>
 
             {/* Event Selector Dropdown */}
             <div className="space-y-1.5 text-left">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#005BAC]" />
+                <Calendar className="w-3.5 h-3.5 text-[#8B0000]" />
                 Chọn sự kiện cần xuất / gửi báo cáo check-in: <span className="text-[#005BAC]">*</span>
               </label>
               {events && events.length > 0 ? (
@@ -274,8 +268,8 @@ export function EventSendCheckinExcelModal({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="bantieptan@doanhtri.vn, daibieu@company.vn..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#005BAC] text-sm text-slate-900 placeholder:text-slate-400"
+                  placeholder="bantieptan@ceo1983.vn, daibieu@company.vn..."
+                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#8B0000] text-sm text-slate-900 placeholder:text-slate-400"
                 />
               </div>
             </div>

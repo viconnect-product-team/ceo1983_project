@@ -726,7 +726,6 @@ function RegPage() {
   const handleOpenCheckinQrModal = () => {
     const target =
       EVENTS.find((e: any) => e.id === eventId) ||
-      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
       EVENTS[0];
     setSelectedQrEvent(target);
     setCheckinQrModalOpen(true);
@@ -735,11 +734,9 @@ function RegPage() {
   const handleOpenSendExcelModal = () => {
     const target =
       (eventId && eventId !== "all" && EVENTS.find((e: any) => e.id === eventId)) ||
-      EVENTS.find((e: any) => e.id === "event-doanhtri-20261121") ||
-      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
       EVENTS[0] || {
-        id: "event-doanhtri-20261121",
-        name: "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN 20/11 - TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027",
+        id: "all",
+        name: "CLB Doanh Nhân CEO 1983 - Hội Nghị & Sự Kiện",
       };
     setSelectedQrEvent(target);
     setSendExcelModalOpen(true);
@@ -748,7 +745,6 @@ function RegPage() {
   const handleExportCheckinExcel = () => {
     const targetEvent =
       EVENTS.find((e: any) => e.id === eventId) ||
-      EVENTS.find((e: any) => e.name && e.name.toLowerCase().includes("doanh trí")) ||
       EVENTS[0];
     const dataToExport = filtered;
     if (dataToExport.length === 0) {
@@ -758,7 +754,7 @@ function RegPage() {
 
     exportToExcel<Registration>({
       title: `DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN SỰ KIỆN`,
-      subtitle: `${targetEvent?.name || "KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027"}`,
+      subtitle: `${targetEvent?.name || "CLB DOANH NHÂN CEO 1983 (HANOIBA)"}`,
       filename: `danh-sach-checkin-${eventId !== "all" ? eventId : "all"}-${Date.now()}`,
       sheetName: "Danh_Sach_CheckIn",
       data: dataToExport,
@@ -805,13 +801,13 @@ function RegPage() {
           "",
         ],
       ],
-      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "VIỆN DOANH TRÍ"],
+      signerTitles: ["NGƯỜI LẬP BIỂU", "BAN TỔ CHỨC", "BAN THƯ KÝ CEO 1983"],
     });
     toast.success(`Đã xuất thành công file Excel cho ${dataToExport.length} đại biểu!`);
   };
 
   const handleDownloadReport = async (fmt: "excel" | "word" | "pdf") => {
-    const targetEventId = eventId !== "all" ? eventId : "event-doanhtri-20261121";
+    const targetEventId = eventId !== "all" ? eventId : (EVENTS[0]?.id || "latest");
     try {
       const res = await fetch(`/api/events/${targetEventId}/export-checkin-file?format=${fmt}`);
       if (!res.ok) throw new Error("Tải file thất bại");
@@ -820,7 +816,7 @@ function RegPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Danh_Sach_CheckIn_Vien_Doanh_Tri_${Date.now()}.${ext}`;
+      a.download = `Danh_Sach_CheckIn_CEO1983_${Date.now()}.${ext}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -854,7 +850,7 @@ function RegPage() {
         subtitle="Quản lý danh sách tham dự, sơ đồ chỗ ngồi và theo dõi thanh toán sự kiện"
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {/* Nút bật mã QR Check-in Viện Doanh Trí (Zalo / Camera) */}
+            {/* Nút bật mã QR Check-in CEO 1983 (Zalo / Camera) */}
             <button
               onClick={handleOpenCheckinQrModal}
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#8B0000] via-[#A52A2A] to-[#991b1b] hover:from-[#750000] hover:to-[#8B0000] px-3.5 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer"
@@ -878,7 +874,7 @@ function RegPage() {
             <button
               onClick={() => handleDownloadReport("word")}
               className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-              title="Tải xuống trực tiếp file Word (.docx) danh sách khách check-in chuẩn văn bản Viện Doanh Trí"
+              title="Tải xuống trực tiếp file Word (.docx) danh sách khách check-in chuẩn văn bản CLB CEO 1983"
             >
               <FileText className="h-4 w-4" />
               <span>Tải Word</span>
@@ -2110,8 +2106,8 @@ function RegPage() {
         <EventSendCheckinExcelModal
           open={sendExcelModalOpen}
           onClose={() => setSendExcelModalOpen(false)}
-          eventId={selectedQrEvent?.id || "event-doanhtri-20261121"}
-          eventName={selectedQrEvent?.name || selectedQrEvent?.title || "Kỷ niệm 4 năm Viện Doanh Trí"}
+          eventId={selectedQrEvent?.id || EVENTS[0]?.id || "all"}
+          eventName={selectedQrEvent?.name || selectedQrEvent?.title || EVENTS[0]?.name || "CLB Doanh Nhân CEO 1983"}
           events={EVENTS}
           totalAttendees={REGISTRATIONS.length}
         />

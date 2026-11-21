@@ -7,17 +7,17 @@ export const Route = createFileRoute("/lucky-draw")({
   head: () => ({
     meta: [
       {
-        title: "Vòng Quay May Mắn - Kỷ Niệm 4 Năm Viện Doanh Trí (HanoiBA)",
+        title: "Vòng Quay May Mắn - CLB Doanh Nhân CEO 1983 (HanoiBA)",
       },
       {
         name: "description",
         content:
-          "Trang Landing Web Bốc Thăm Trúng Thưởng & Vòng Quay May Mắn Sân Khấu Sự Kiện Toạ Đàm Doanh Nghiệp 2027.",
+          "Trang Sân Khấu Bốc Thăm Trúng Thưởng & Vòng Quay May Mắn Sự Kiện CLB Doanh Nhân CEO 1983.",
       },
     ],
   }),
 });
 
 function LuckyDrawPublicLandingRoutePage() {
-  return <LuckyDrawLandingPage eventId="event-doanhtri-20261121" />;
+  return <LuckyDrawLandingPage eventId="latest" />;
 }

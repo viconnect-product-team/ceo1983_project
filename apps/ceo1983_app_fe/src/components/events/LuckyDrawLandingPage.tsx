@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { fetchNestApi } from "@/lib/api-client";
 import { toast } from "sonner";
-import { VienDoanhTriBrandBanner } from "./VienDoanhTriBrandBanner";
+import { Ceo1983BrandBanner } from "./Ceo1983BrandBanner";
 
 export interface Prize {
   id: string;
@@ -100,7 +100,7 @@ const THEME_OPTIONS: {
   },
   {
     id: "emerald_corporate",
-    name: "Xanh Viện Doanh Trí (Emerald Corporate)",
+    name: "Xanh Navy CEO 1983 (Corporate)",
     previewClass: "from-[#005BAC] via-[#0284C7] to-[#00A859]",
     pageBg: "bg-gradient-to-b from-[#03203c] via-[#023157] to-[#011b33]",
     headerBg: "from-[#003865]/95 via-[#005BAC]/95 to-[#00A859]/90 backdrop-blur-md",
@@ -145,7 +145,7 @@ export const DEFAULT_PRIZES: Prize[] = [
   {
     id: "p-nhat",
     title: "GIẢI NHẤT",
-    gift: "Khóa Đào Tạo AI Doanh Trí Chiến Lược 2027",
+    gift: "Khóa Đào Tạo Quản Trị Chiến Lược CEO 1983",
     quantity: 1,
     remaining: 1,
     color: "#005BAC",
@@ -163,7 +163,7 @@ export const DEFAULT_PRIZES: Prize[] = [
   {
     id: "p-ba",
     title: "GIẢI BA",
-    gift: "Kỷ Niệm Chương Pha Lê & Bộ Quà Viện Doanh Trí",
+    gift: "Kỷ Niệm Chương Pha Lê & Bộ Quà CEO 1983",
     quantity: 3,
     remaining: 3,
     color: "#0284C7",
@@ -181,8 +181,8 @@ export const DEFAULT_PRIZES: Prize[] = [
 ];
 
 const SLICE_COLORS = [
-  "#00A859", // Xanh lá Viện Doanh Trí
-  "#005BAC", // Xanh dương Viện Doanh Trí
+  "#00A859",
+  "#005BAC",
   "#0284C7", // Sky blue
   "#EAB308", // Vàng gold
   "#10B981", // Emerald
@@ -231,7 +231,7 @@ function playFanfareSound() {
 }
 
 export function LuckyDrawLandingPage({
-  eventId = "event-doanhtri-20261121",
+  eventId = "latest",
 }: {
   eventId?: string;
 }) {
@@ -245,10 +245,10 @@ export function LuckyDrawLandingPage({
       theme: "royal_gold",
       backdropUrl: "",
       backdropOpacity: 0.85,
-      title: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ",
-      subtitle: "Tri Ân Ngày Nhà Giáo Việt Nam 20/11 & Toạ Đàm Doanh Nghiệp Việt Nam 2027",
-      date: "14h30 - 17h30, Thứ Bảy, ngày 21/11/2026",
-      location: "Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội",
+      title: "VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983",
+      subtitle: "Gắn Kết - Chia Sẻ - Cùng Phát Triển (HanoiBA)",
+      date: "Sự Kiện Kết Nối & Gala Doanh Nhân",
+      location: "Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983",
     };
   });
 
@@ -397,7 +397,7 @@ export function LuckyDrawLandingPage({
           { id: "1", name: "Phạm Hồng Nguyên", company: "CTY CP Kết Nối Công Nghệ", position: "CEO", checkedIn: true },
           { id: "2", name: "Phạm Văn Vũ", company: "Viconnect Corp", position: "Tổng Giám Đốc", checkedIn: true },
           { id: "3", name: "Nguyễn Văn Linh", company: "Công ty Cổ phần Đầu tư VIO", position: "Chủ tịch", checkedIn: true },
-          { id: "4", name: "Trần Mai Anh", company: "Tập Đoàn Doanh Trí Toàn Cầu", position: "Phó Giám Đốc", checkedIn: true },
+          { id: "4", name: "Trần Mai Anh", company: "Tập Đoàn Đầu Tư CEO 1983", position: "Phó Giám Đốc", checkedIn: true },
           { id: "5", name: "Lê Hoàng Long", company: "Công ty Giải Pháp AI Việt", position: "Giám Đốc", checkedIn: true },
           { id: "6", name: "Đặng Thu Trang", company: "Viện Đào Tạo & Phát Triển", position: "Trưởng Ban", checkedIn: true },
           { id: "7", name: "Vũ Quang Hải", company: "Tập Đoàn Tài Chính Á Châu", position: "CEO", checkedIn: true },
@@ -605,9 +605,9 @@ export function LuckyDrawLandingPage({
     ctx.font = "black 11px sans-serif";
     ctx.fillStyle = "#1E293B";
     ctx.textAlign = "center";
-    ctx.fillText("VIỆN", centerX, centerY - 6);
+    ctx.fillText("CEO", centerX, centerY - 6);
     ctx.font = "bold 9.5px sans-serif";
-    ctx.fillText("DOANH TRÍ", centerX, centerY + 8);
+    ctx.fillText("1983", centerX, centerY + 8);
     ctx.restore();
   };
 
@@ -632,7 +632,7 @@ export function LuckyDrawLandingPage({
           prizeName: prize.title,
           prizeRank: prize.title,
           prizeDescription: prize.gift,
-          eventName: bannerConfig.title || "KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ",
+          eventName: bannerConfig.title || "VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983",
         }),
       });
 
@@ -833,7 +833,7 @@ export function LuckyDrawLandingPage({
     const newPrize: Prize = {
       id: `prize-${Date.now()}`,
       title: newPrizeTitle.trim().toUpperCase(),
-      gift: newPrizeGift.trim() || "Phần quà may mắn từ Viện Doanh Trí",
+      gift: newPrizeGift.trim() || "Phần quà may mắn từ CLB Doanh Nhân CEO 1983",
       quantity: newPrizeQty,
       remaining: newPrizeQty,
       color: SLICE_COLORS[prizes.length % SLICE_COLORS.length],
@@ -923,14 +923,14 @@ export function LuckyDrawLandingPage({
           {/* Logo & Brand Identity */}
           <div className="flex items-center gap-3.5">
             <Link to="/lucky-draw" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black flex flex-col items-center justify-center shadow-lg ring-2 ring-amber-300/60 group-hover:scale-105 transition">
-                <span className="text-base font-black leading-none">DT</span>
-                <span className="text-[7.5px] font-black uppercase text-slate-900 tracking-wider">HanoiBA</span>
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#8B0000] via-[#003B95] to-[#D4AF37] text-white font-black flex flex-col items-center justify-center shadow-lg ring-2 ring-amber-300/60 group-hover:scale-105 transition">
+                <span className="text-sm font-black leading-none">1983</span>
+                <span className="text-[7px] font-black uppercase text-amber-200 tracking-wider">HanoiBA</span>
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-400" />
-                  VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM
+                  CLB DOANH NHÂN CEO 1983 (HANOIBA)
                 </span>
                 <h2 className="text-xs sm:text-sm font-black text-white tracking-tight line-clamp-1">
                   Vòng Quay May Mắn & Bốc Thăm Sân Khấu
@@ -1008,9 +1008,9 @@ export function LuckyDrawLandingPage({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-amber-500/15 via-[#005BAC]/20 to-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-4">
-          {/* Banner Đồ Họa Chuẩn Thương Hiệu Viện Doanh Trí (Ảnh 1) */}
+          {/* Banner Đồ Họa Chuẩn Thương Hiệu CLB Doanh Nhân CEO 1983 */}
           <div className="py-2">
-            <VienDoanhTriBrandBanner variant="dark" />
+            <Ceo1983BrandBanner variant="dark" />
           </div>
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400/20 via-yellow-400/25 to-amber-500/20 border border-amber-300/40 text-amber-300 font-black text-xs uppercase tracking-widest shadow-md">
@@ -1288,7 +1288,7 @@ export function LuckyDrawLandingPage({
             Cơ Cấu Giải Thưởng Sự Kiện
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xl mx-auto">
-            Các phần quà giá trị cao do Ban Tổ Chức Viện Doanh Trí và các nhà tài trợ trao tặng cho đại biểu may mắn
+            Các phần quà giá trị cao do Ban Tổ Chức CLB Doanh Nhân CEO 1983 và các nhà tài trợ trao tặng cho đại biểu may mắn
           </p>
         </div>
 
@@ -1324,7 +1324,7 @@ export function LuckyDrawLandingPage({
 
               <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
                 <span className="text-slate-400">Đơn vị tài trợ:</span>
-                <span className="text-amber-300 font-bold">{p.sponsor || "Viện Doanh Trí"}</span>
+                <span className="text-amber-300 font-bold">{p.sponsor || "CLB Doanh Nhân CEO 1983"}</span>
               </div>
             </div>
           ))}
@@ -1340,7 +1340,7 @@ export function LuckyDrawLandingPage({
                 LỊCH TRÌNH CHƯƠNG TRÌNH
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">
-                Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm 2027
+                Hội Nghị Giao Thương & Gala Doanh Nhân CEO 1983
               </h2>
               <p className="text-xs text-slate-300 mt-2 leading-relaxed">
                 Chương trình quy tụ hơn 100+ Lãnh đạo Doanh nghiệp, Chuyên gia và Hội viên CLB Doanh Nhân CEO 1983 (HanoiBA).
@@ -1419,11 +1419,11 @@ export function LuckyDrawLandingPage({
       <footer className="relative z-10 border-t border-white/10 bg-slate-950 py-8 px-4 sm:px-8 text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-xs">
-              DT
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-[10px]">
+              1983
             </div>
             <span className="font-bold text-slate-300">
-              Viện Doanh Trí · CLB Doanh Nhân CEO 1983 (HanoiBA)
+              CLB Doanh Nhân CEO 1983 (HanoiBA)
             </span>
           </div>
           <p className="text-[11px]">

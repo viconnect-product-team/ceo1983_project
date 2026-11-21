@@ -9,7 +9,7 @@ export interface LuckyDrawWheelProps {
 }
 
 export function LuckyDrawWheel({
-  eventId = "event-doanhtri-20261121",
+  eventId = "latest",
 }: LuckyDrawWheelProps) {
   return <LuckyDrawLandingPage eventId={eventId} />;
 }

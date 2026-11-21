@@ -3138,7 +3138,7 @@ export function MailTemplateManager() {
                       value={quickEmailInput}
                       onChange={(e) => setQuickEmailInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddQuickEmail()}
-                      placeholder="vd: doanhtri@gmail.com"
+                      placeholder="vd: contact@ceo1983.vn"
                       className="flex-1 text-xs px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 font-mono"
                     />
                     <button

@@ -538,7 +538,7 @@ export class VotingService {
       averageRating: isStarRating ? averageRating || 5.0 : null,
       starDistribution: isStarRating ? starDistribution : null,
       eventId: r.event_id || null,
-      eventName: r.event_name || 'Kỷ Niệm 4 Năm Viện Doanh Trí',
+      eventName: r.event_name || 'Sự kiện CLB Doanh Nhân CEO 1983',
       options,
       totalVotes,
       createdAt: r.created_at,
@@ -628,7 +628,7 @@ export class VotingService {
 
     let eventId = poll.eventId;
     if (!eventId) {
-      const events = await this.votingRepo.findLatestDoanhTriEvent();
+      const events = await this.votingRepo.findLatestEvent();
       if (events.length > 0) eventId = events[0].id;
     }
 
@@ -654,7 +654,7 @@ export class VotingService {
               voteUrl: `${voteUrl}?email=${encodeURIComponent(att.email)}&name=${encodeURIComponent(att.member_name || '')}`,
               eventTitle:
                 poll.eventName ||
-                'Kỷ Niệm 4 Năm Viện Doanh Trí & Toạ Đàm Doanh Nghiệp',
+                'Sự kiện CLB Doanh Nhân CEO 1983 (HanoiBA)',
             });
             sentCount++;
           } catch (mailErr: any) {

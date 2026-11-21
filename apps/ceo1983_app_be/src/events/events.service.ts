@@ -2755,9 +2755,11 @@ export class EventsService implements OnModuleInit {
           WHERE id = ${attendeeId}
         `.catch(() => null);
 
-        // Tự động gửi báo cáo danh sách check-in 3 định dạng về email viendoanhtri.iem@gmail.com
+        // Tự động gửi báo cáo danh sách check-in 3 định dạng về email Ban Thư Ký CLB CEO 1983
         const autoReportEmail =
-          process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+          process.env.CEO1983_REPORT_EMAIL ||
+          process.env.VIEN_DOANHTRI_REPORT_EMAIL ||
+          'banbientap@ceo1983.vn';
         const targetEventId = cur.event_id;
         if (targetEventId) {
           this.sendCheckinReportEmail(
@@ -3790,7 +3792,9 @@ export class EventsService implements OnModuleInit {
 
     if (checkedIn) {
       const autoReportEmail =
-        process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+        process.env.CEO1983_REPORT_EMAIL ||
+        process.env.VIEN_DOANHTRI_REPORT_EMAIL ||
+        'banbientap@ceo1983.vn';
       this.sendCheckinReportEmail(
         userId,
         eventId,
@@ -4232,7 +4236,7 @@ export class EventsService implements OnModuleInit {
    * Check-in công khai sự kiện qua mã QR (dành cho khách quét Zalo / camera điện thoại)
    * Form chỉ gồm: Tên, email, chức danh, công ty
    * Phân loại check-in: tối thiểu trong 30 phút (trước/trong 30 phút từ lúc bắt đầu) là đúng giờ ('on_time'), sau 30 phút là muộn ('late').
-   * Ngay lập tức gửi email thông báo check-in thành công thuộc Viện Doanh Trí về email người đã điền.
+   * Ngay lập tức gửi email thông báo check-in thành công thuộc CLB Doanh Nhân CEO 1983 về email người đã điền.
    */
   async publicCheckin(eventId: string, body: any) {
     const fullName = String(body?.fullName || body?.name || '').trim();
@@ -4248,7 +4252,7 @@ export class EventsService implements OnModuleInit {
     // Nếu khách không nhập email hoặc email không hợp lệ, tự động tạo email định danh theo SĐT hoặc mã khách
     if (!email || !email.includes('@')) {
       const cleanPhone = phone.replace(/\D/g, '');
-      email = cleanPhone ? `${cleanPhone}@doanhtri.vn` : `guest_${Date.now()}@doanhtri.vn`;
+      email = cleanPhone ? `${cleanPhone}@ceo1983.vn` : `guest_${Date.now()}@ceo1983.vn`;
     }
 
     // 1. Tìm sự kiện
@@ -4438,19 +4442,19 @@ export class EventsService implements OnModuleInit {
     }
 
     // 4. Ngay lập tức gửi email xác nhận check-in thành công về hòm thư người đã điền (nếu có email thật)
-    if (!email.endsWith('@doanhtri.vn')) {
+    if (!email.endsWith('@ceo1983.vn') && !email.endsWith('@doanhtri.vn')) {
       this.mailService
         .sendDoanhTriCheckinSuccessEmail({
           to: email,
           fullName,
           position,
           company,
-          eventTitle: event.name || event.title,
+          eventTitle: event.name || event.title || 'Sự kiện CLB Doanh Nhân CEO 1983 (HanoiBA)',
           eventDate: 'Thứ 7, ngày 21/11/2026',
-          eventTime: '14h30 - 17h30, Thứ 7, ngày 21/11/2026',
+          eventTime: 'Hội Nghị & Giao Thương Doanh Nhân',
           eventLocation:
             event.location ||
-            'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội',
+            'Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)',
           checkedInAt: checkedInAtFormatted,
           checkinStatus,
           hotline: '0988.870.888 / 0903.203.204',
@@ -4462,9 +4466,11 @@ export class EventsService implements OnModuleInit {
         });
     }
 
-    // 4.1. Tự động gửi báo cáo danh sách check-in đầy đủ 3 định dạng (Excel, Word, PDF) về email viendoanhtri.iem@gmail.com
+    // 4.1. Tự động gửi báo cáo danh sách check-in đầy đủ 3 định dạng (Excel, Word, PDF) về email Ban Thư Ký
     const autoReportEmail =
-      process.env.VIEN_DOANHTRI_REPORT_EMAIL || 'viendoanhtri.iem@gmail.com';
+      process.env.CEO1983_REPORT_EMAIL ||
+      process.env.VIEN_DOANHTRI_REPORT_EMAIL ||
+      'banbientap@ceo1983.vn';
     this.sendCheckinReportEmail(
       'system',
       resolvedEventId,
@@ -4519,7 +4525,7 @@ export class EventsService implements OnModuleInit {
   }
 
   /**
-   * Lấy danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện (Doanh Trí / Toạ đàm)
+   * Lấy danh sách đại biểu công khai đã đăng ký / check-in cho sự kiện CLB Doanh Nhân CEO 1983
    */
   async getPublicAttendees(eventId: string) {
     let resolvedEventId = eventId;
@@ -4529,14 +4535,13 @@ export class EventsService implements OnModuleInit {
       LIMIT 1
     `.catch(() => []);
 
-    let eventName = 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP VIỆT 2027';
+    let eventName = 'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)';
     if (eventRows.length > 0) {
       resolvedEventId = eventRows[0].id;
       eventName = eventRows[0].name || eventRows[0].title || eventName;
     } else {
       const match = await this.prisma.$queryRaw<any[]>`
         SELECT id, name, title, date, location FROM public.events
-        WHERE name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
         ORDER BY created_at DESC LIMIT 1
       `.catch(() => []);
       if (match.length > 0) {
@@ -4634,7 +4639,7 @@ export class EventsService implements OnModuleInit {
   }
 
   /**
-   * Tạo Buffer file Excel (.xlsx) danh sách đại biểu check-in kèm Header trang nhã Viện Doanh Trí
+   * Tạo Buffer file Excel (.xlsx) danh sách đại biểu check-in kèm Header trang nhã CLB Doanh Nhân CEO 1983
    */
   generateCheckinExcel(rows: any[], eventName: string): Buffer {
     const rawData = rows.map((r, index) => {
@@ -4691,13 +4696,13 @@ export class EventsService implements OnModuleInit {
     const lateCount = rawData.filter((d) => d[8] === 'Check-in muộn (>30p)').length;
 
     const sheetData: any[][] = [
-      ['VIỆN DOANH TRÍ'],
-      ['KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11'],
+      ['CLB DOANH NHÂN CEO 1983 (HANOIBA)'],
+      [`SỰ KIỆN: ${eventName.toUpperCase()}`],
       ['BÁO CÁO DANH SÁCH ĐẠI BIỂU ĐIỂM DANH CHECK-IN'],
       [`Sự kiện: ${eventName}`],
-      ['Thời gian: 14h30 - 17h30, Thứ 7, ngày 21/11/2026 (Tiệc 18h00 - 22h00)'],
-      ['Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội'],
-      [`Hotline BTC: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: ${nowFormatted}`],
+      ['Thời gian: Thứ 7, ngày 21/11/2026'],
+      ['Địa điểm: Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)'],
+      [`Hotline Ban Thư Ký: 0988.870.888 / 0903.203.204 | Trích xuất dữ liệu: ${nowFormatted}`],
       [`Tổng số đại biểu: ${rows.length} | Đúng giờ (trong 30p): ${onTimeCount} | Check-in muộn: ${lateCount}`],
       [],
       [
@@ -4727,7 +4732,7 @@ export class EventsService implements OnModuleInit {
         '',
       ],
       [],
-      ['', '', 'NGƯỜI LẬP BIỂU', '', '', 'BAN TỔ CHỨC', '', '', 'VIỆN DOANH TRÍ', ''],
+      ['', '', 'NGƯỜI LẬP BIỂU', '', '', 'BAN TỔ CHỨC', '', '', 'BAN THƯ KÝ CEO 1983', ''],
       ['', '', '(Ký, ghi rõ họ tên)', '', '', '(Ký, ghi rõ họ tên)', '', '', '(Ký, đóng dấu)', ''],
     ];
 
@@ -4783,10 +4788,10 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 80 },
               children: [
                 new DocxTextRun({
-                  text: 'VIỆN DOANH TRÍ',
+                  text: 'CLB DOANH NHÂN CEO 1983 (HANOIBA)',
                   bold: true,
                   size: 32,
-                  color: '005BAC',
+                  color: '8B0000',
                 }),
               ],
             }),
@@ -4795,10 +4800,10 @@ export class EventsService implements OnModuleInit {
               spacing: { after: 60 },
               children: [
                 new DocxTextRun({
-                  text: 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11',
+                  text: 'HỘI DOANH NHÂN TRẺ HÀ NỘI · GẮN KẾT - CHIA SẺ - CÙNG PHÁT TRIỂN',
                   bold: true,
                   size: 20,
-                  color: '00A859',
+                  color: '003B95',
                 }),
               ],
             }),
@@ -5077,21 +5082,21 @@ export class EventsService implements OnModuleInit {
     let page = pdfDoc.addPage([595.28, 841.89]); // A4
     const { width, height } = page.getSize();
 
-    // Header Viện Doanh Trí (Màu xanh nhận diện thương hiệu #005BAC & #00A859)
-    page.drawText('VIEN DOANH TRI', {
+    // Header CLB Doanh Nhân CEO 1983 (HanoiBA)
+    page.drawText('CLB DOANH NHAN CEO 1983 (HANOIBA)', {
       x: 50,
       y: height - 45,
-      size: 16,
+      size: 15,
       font: boldFont,
-      color: pdfRgb(0, 0.357, 0.675), // #005BAC
+      color: pdfRgb(0.545, 0, 0), // #8B0000
     });
 
-    page.drawText('KY NIEM 4 NAM VIEN DOANH TRI & TRI AN NGAY NHA GIAO VN 20/11', {
+    page.drawText('HOI DOANH NHAN TRE HA NOI · GAN KET - CHIA SE - CUNG PHAT TRIEN', {
       x: 50,
       y: height - 62,
-      size: 10,
+      size: 9.5,
       font: boldFont,
-      color: pdfRgb(0, 0.659, 0.349), // #00A859
+      color: pdfRgb(0, 0.231, 0.584), // #003B95
     });
 
     page.drawText('DANH SACH DAI BIEU DIEM DANH CHECK-IN', {
@@ -5112,7 +5117,7 @@ export class EventsService implements OnModuleInit {
     });
 
     page.drawText(
-      `Thoi gian: 14h30 - 17h30, 21/11/2026 (Tiec 18h00 - 22h00) | Dia diem: Tang 2, NH Long Phung, 29T2 Hoang Dao Thuy, HN`,
+      `Thoi gian: 21/11/2026 | Dia diem: Hoi Truong Su Kien CLB Doanh Nhan CEO 1983 (HanoiBA)`,
       {
         x: 50,
         y: height - 110,
@@ -5240,21 +5245,13 @@ export class EventsService implements OnModuleInit {
       );
     }
 
-    // Tìm sự kiện theo eventId hoặc fallback sự kiện Viện Doanh Trí
+    // Tìm sự kiện theo eventId hoặc lấy sự kiện mới nhất
     let targetEvent: any = null;
     if (eventId && eventId !== 'all') {
       const events = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
       `.catch(() => []);
       if (events.length) targetEvent = events[0];
-    }
-    if (!targetEvent) {
-      const dtFound = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.events 
-        WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
-        ORDER BY created_at DESC LIMIT 1
-      `.catch(() => []);
-      if (dtFound.length) targetEvent = dtFound[0];
     }
     if (!targetEvent) {
       const anyEvent = await this.prisma.$queryRaw<any[]>`
@@ -5267,7 +5264,7 @@ export class EventsService implements OnModuleInit {
     }
     const event = targetEvent;
     const resolvedEventId = event.id;
-    const eventName = event.name || event.title || 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ';
+    const eventName = event.name || event.title || 'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)';
 
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
@@ -5297,7 +5294,7 @@ export class EventsService implements OnModuleInit {
     if (format === 'all' || format === 'excel') {
       const excelBuf = this.generateCheckinExcel(rows, eventName);
       attachments.push({
-        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.xlsx`,
+        filename: `Danh_Sach_CheckIn_CEO1983_${timestamp}.xlsx`,
         content: excelBuf,
         contentType:
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -5313,7 +5310,7 @@ export class EventsService implements OnModuleInit {
         lateCount,
       );
       attachments.push({
-        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.docx`,
+        filename: `Danh_Sach_CheckIn_CEO1983_${timestamp}.docx`,
         content: docxBuf,
         contentType:
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -5329,7 +5326,7 @@ export class EventsService implements OnModuleInit {
         lateCount,
       );
       attachments.push({
-        filename: `Danh_Sach_CheckIn_Vien_Doanh_Tri_${timestamp}.pdf`,
+        filename: `Danh_Sach_CheckIn_CEO1983_${timestamp}.pdf`,
         content: pdfBuf,
         contentType: 'application/pdf',
       });
@@ -5364,21 +5361,13 @@ export class EventsService implements OnModuleInit {
     eventId: string,
     format: 'excel' | 'word' | 'pdf' = 'excel',
   ) {
-    // Tìm sự kiện theo eventId hoặc fallback sự kiện Viện Doanh Trí
+    // Tìm sự kiện theo eventId hoặc lấy sự kiện mới nhất
     let targetEvent: any = null;
     if (eventId && eventId !== 'all') {
       const events = await this.prisma.$queryRaw<any[]>`
         SELECT * FROM public.events WHERE id = ${eventId} OR slug = ${eventId} LIMIT 1
       `.catch(() => []);
       if (events.length) targetEvent = events[0];
-    }
-    if (!targetEvent) {
-      const dtFound = await this.prisma.$queryRaw<any[]>`
-        SELECT * FROM public.events 
-        WHERE id = 'event-doanhtri-20261121' OR name ILIKE '%DOANH TRÍ%' OR title ILIKE '%DOANH TRÍ%'
-        ORDER BY created_at DESC LIMIT 1
-      `.catch(() => []);
-      if (dtFound.length) targetEvent = dtFound[0];
     }
     if (!targetEvent) {
       const anyEvent = await this.prisma.$queryRaw<any[]>`
@@ -5391,7 +5380,7 @@ export class EventsService implements OnModuleInit {
     }
     const event = targetEvent;
     const resolvedEventId = event.id;
-    const eventName = event.name || event.title || 'KỶ NIỆM 4 NĂM VIỆN DOANH TRÍ';
+    const eventName = event.name || event.title || 'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)';
 
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM public.event_registrations
@@ -5497,7 +5486,7 @@ export class EventsService implements OnModuleInit {
       }
     }
 
-    if (!email || !email.includes('@') || email.endsWith('@doanhtri.vn')) {
+    if (!email || !email.includes('@') || email.endsWith('@ceo1983.vn') || email.endsWith('@doanhtri.vn')) {
       return {
         ok: true,
         sent: false,
@@ -5517,7 +5506,7 @@ export class EventsService implements OnModuleInit {
         prizeDescription: body.prizeDescription,
         eventTitle:
           body.eventName ||
-          'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11',
+          'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)',
       });
 
       return {
@@ -5561,10 +5550,10 @@ export class EventsService implements OnModuleInit {
         theme: 'royal_gold', // royal_gold, emerald_corporate, sapphire_gala, warm_amber
         backdropUrl: '',
         backdropOpacity: 0.85,
-        title: event?.name || event?.title || 'CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ',
-        subtitle: 'Tri Ân Ngày Nhà Giáo Việt Nam 20/11 & Toạ Đàm Doanh Nghiệp 2027',
-        date: '14h30 - 17h30, Thứ Bảy 21/11/2026',
-        location: 'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy',
+        title: event?.name || event?.title || 'VÒNG QUAY MAY MẮN - CLB DOANH NHÂN CEO 1983',
+        subtitle: 'Gắn Kết - Chia Sẻ - Cùng Phát Triển (HanoiBA)',
+        date: 'Sự Kiện Kết Nối & Gala Doanh Nhân',
+        location: 'Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983',
       };
 
       let storedPrizes: any[] = [];
@@ -5683,7 +5672,7 @@ export class EventsService implements OnModuleInit {
         const qty = Math.max(1, Math.round(Number(p.quantity) || 1));
         const color = String(p.color || '#005BAC');
         const icon = String(p.icon || '🎁');
-        const sponsor = String(p.sponsor || 'Viện Doanh Trí');
+        const sponsor = String(p.sponsor || 'CLB Doanh Nhân CEO 1983');
 
         await this.prisma
           .$executeRaw`

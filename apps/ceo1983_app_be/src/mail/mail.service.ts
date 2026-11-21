@@ -3429,8 +3429,7 @@ export class MailService {
   }
 
   /**
-   * Gửi email xác nhận check-in thành công thuộc về Viện Doanh Trí
-   * Kỷ niệm 4 năm Viện Doanh Trí & Toạ đàm Doanh Nghiệp Việt 2027
+   * Gửi email xác nhận check-in thành công thuộc về CLB Doanh Nhân CEO 1983 (HanoiBA)
    */
   async sendDoanhTriCheckinSuccessEmail(
     options: SendDoanhTriCheckinSuccessEmailOptions,
@@ -3438,12 +3437,12 @@ export class MailService {
     const {
       to,
       fullName,
-      position = 'Đại biểu',
+      position = 'Hội viên / Đại biểu',
       company = 'Doanh nghiệp',
-      eventTitle,
+      eventTitle = 'Sự kiện CLB Doanh Nhân CEO 1983',
       eventDate = '21/11/2026',
-      eventTime = '14h30 - 17h30 (Tiệc: 18h00 - 22h00)',
-      eventLocation = 'Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, TP Hà Nội',
+      eventTime = 'Sự kiện Kết Nối & Hội Nghị Hội Viên',
+      eventLocation = 'Hội Trường Sự Kiện CLB Doanh Nhân CEO 1983 (HanoiBA)',
       checkedInAt,
       checkinStatus,
       hotline = '0988.870.888 / 0903.203.204',
@@ -3462,7 +3461,7 @@ export class MailService {
     const statusBg = isOnTime ? '#f0fdf4' : '#fffbeb';
     const statusBorder = isOnTime ? '#bbf7d0' : '#fde68a';
 
-    const subject = `[Viện Doanh Trí] Cảm ơn Anh/Chị ${fullName} đã check-in thành công - Kỷ niệm 4 năm Viện Doanh Trí`;
+    const subject = `[CEO 1983] Cảm ơn Anh/Chị ${fullName} đã check-in thành công - ${eventTitle}`;
 
     const html = `
 <!DOCTYPE html>
@@ -3470,42 +3469,42 @@ export class MailService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xác nhận Check-in - Viện Doanh Trí</title>
+  <title>Xác nhận Check-in - CLB Doanh Nhân CEO 1983</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px; color: #1e293b; }
     .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); color: #ffffff; padding: 36px 30px 28px; text-align: center; position: relative; }
+    .header { background: linear-gradient(135deg, #8B0000 0%, #003B95 60%, #D4AF37 100%); color: #ffffff; padding: 36px 30px 28px; text-align: center; position: relative; }
     .header-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.6); color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 12px; }
     .header h1 { margin: 0 0 6px; font-size: 21px; font-weight: 900; line-height: 1.3; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; }
-    .header p { margin: 0; font-size: 13px; color: #e0f2fe; font-weight: 500; }
+    .header p { margin: 0; font-size: 13px; color: #fef08a; font-weight: 500; }
     .content { padding: 32px 30px; }
     .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 14px; }
     .intro-text { font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 22px; }
     .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; margin-bottom: 22px; width: 100%; box-sizing: border-box; }
-    .ticket-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #005BAC; }
+    .ticket-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-bottom: 24px; border-left: 4px solid #8B0000; }
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
     .info-row:last-child { border-bottom: none; }
     .info-label { color: #64748b; font-weight: 500; }
     .info-value { color: #0f172a; font-weight: 700; text-align: right; max-width: 65%; }
-    .agenda-card { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px 20px; font-size: 13px; color: #166534; line-height: 1.6; margin-bottom: 24px; }
+    .agenda-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 14px; padding: 16px 20px; font-size: 13px; color: #991b1b; line-height: 1.6; margin-bottom: 24px; }
     .footer { background: #0f172a; color: #94a3b8; padding: 26px 30px; text-align: center; font-size: 12px; line-height: 1.6; }
     .footer strong { color: #f1f5f9; }
-    .footer a { color: #00A859; text-decoration: none; }
+    .footer a { color: #D4AF37; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="header-badge">VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM</div>
+      <div class="header-badge">CLB DOANH NHÂN CEO 1983 · HANOIBA</div>
       <h1>XÁC NHẬN CHECK-IN THÀNH CÔNG</h1>
-      <p>Tri ân Ngày Nhà Giáo Việt Nam 20/11 & Toạ đàm Doanh Nghiệp Việt 2027</p>
+      <p>Gắn Kết — Chia Sẻ — Cùng Phát Triển</p>
     </div>
 
     <div class="content">
-      <div class="greeting">Kính gửi Anh/Chị: <strong style="color: #005BAC;">${fullName}</strong>,</div>
+      <div class="greeting">Kính gửi Anh/Chị: <strong style="color: #8B0000;">${fullName}</strong>,</div>
       
       <p class="intro-text">
-        <strong>Viện Doanh Trí</strong> xin trân trọng cảm ơn Anh/Chị đã có mặt và hoàn tất thủ tục check-in tham dự chương trình toạ đàm đặc biệt hôm nay. Chúc Anh/Chị có một buổi giao lưu, kết nối và đón nhận nhiều giá trị hữu ích!
+        <strong>CLB Doanh Nhân CEO 1983 (HanoiBA)</strong> xin trân trọng cảm ơn Anh/Chị đã có mặt và hoàn tất thủ tục check-in tham dự sự kiện hôm nay. Chúc Anh/Chị có một buổi giao lưu, kết nối và đón nhận nhiều giá trị hữu ích!
       </p>
 
       <div class="status-badge">
@@ -3513,8 +3512,8 @@ export class MailService {
       </div>
 
       <div class="ticket-card">
-        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #005BAC; margin-bottom: 12px;">
-          THÔNG TIN KHÁCH MỜI ĐIỂM DANH
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #8B0000; margin-bottom: 12px;">
+          THÔNG TIN ĐẠI BIỂU ĐIỂM DANH
         </div>
         <div class="info-row">
           <span class="info-label">Khách mời / Đại biểu:</span>
@@ -3522,7 +3521,7 @@ export class MailService {
         </div>
         <div class="info-row">
           <span class="info-label">Chức danh:</span>
-          <span class="info-value">${position || 'Khách mời'}</span>
+          <span class="info-value">${position || 'Hội viên'}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Công ty / Doanh nghiệp:</span>
@@ -3547,20 +3546,20 @@ export class MailService {
       </div>
 
       <div class="agenda-card">
-        <strong>🗓 LỊCH TRÌNH CHƯƠNG TRÌNH:</strong><br/>
-        • <strong>14h30 - 17h30:</strong> Toạ đàm “Doanh nghiệp Việt 2027: Củng cố nội lực - Kết nối - Tạo đà tăng trưởng” (Dòng tiền - Năng suất thực - Thị trường trong kỷ nguyên AI)<br/>
-        • <strong>18h00 - 22h00:</strong> Tiệc chúc mừng sinh nhật Viện Doanh Trí tròn 4 năm & Tri ân Ngày Nhà Giáo Việt Nam 20/11
+        <strong>🗓 NỘI DUNG SỰ KIỆN:</strong><br/>
+        • Chương trình Giao thương, Kết nối Doanh nghiệp & Hội nghị Ban Điều Hành CLB Doanh Nhân CEO 1983<br/>
+        • Giao lưu chia sẻ kinh nghiệm quản trị và xúc tiến thương mại nội khối
       </div>
 
       <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 0;">
-        ☎ <strong>Hotline hỗ trợ Ban Tổ Chức:</strong> <span style="color: #00A859; font-weight: 700;">${hotline}</span>
+        ☎ <strong>Hotline hỗ trợ Ban Thư Ký:</strong> <span style="color: #8B0000; font-weight: 700;">${hotline}</span>
       </p>
     </div>
 
     <div class="footer">
-      <div><strong>VIỆN DOANH TRÍ</strong></div>
-      <div>Đồng hành cùng Doanh nghiệp Việt Nam phát triển bền vững</div>
-      <div style="margin-top: 6px;">Hotline: ${hotline}</div>
+      <div><strong>CLB DOANH NHÂN CEO 1983 (HANOIBA)</strong></div>
+      <div>Gắn kết — Chia sẻ — Cùng phát triển</div>
+      <div style="margin-top: 6px;">Hotline: ${hotline} | Email: contact@ceo1983.vn</div>
     </div>
   </div>
 </body>
@@ -3571,8 +3570,8 @@ export class MailService {
       to: cleanTo,
       subject,
       html,
-      fromName: 'Viện Doanh Trí',
-      auditContext: `[DOANH_TRI_CHECKIN] ${fullName} (${cleanTo}) - Status: ${checkinStatus}`,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[CEO1983_CHECKIN] ${fullName} (${cleanTo}) - Status: ${checkinStatus}`,
     });
   }
 
@@ -3645,8 +3644,8 @@ export class MailService {
     const fileNamesList = attachments.map((a) => a.filename).join(', ');
 
     const subject = latestAttendee
-      ? `[Viện Doanh Trí] Báo Cáo Check-in (${latestAttendee.fullName}): ${eventName}`
-      : `[Báo Cáo Viện Doanh Trí] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
+      ? `[CEO 1983] Báo Cáo Check-in (${latestAttendee.fullName}): ${eventName}`
+      : `[Báo Cáo CEO 1983] Danh Sách Đại Biểu Check-in Sự Kiện: ${eventName}`;
     const html = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -3660,17 +3659,17 @@ export class MailService {
 </head>
 <body>
   <div class="box">
-    <h2 style="color: #005BAC; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
-    <p>Kính gửi Ban Tổ Chức / Quản Trị Viên,</p>
-    <p>Hệ thống Viện Doanh Trí trân trọng gửi đính kèm file danh sách khách mời đã thực hiện quét mã QR check-in tại sự kiện:</p>
-    <div style="background: #f0fdf4; border-left: 4px solid #00A859; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #166534;">
+    <h2 style="color: #8B0000; margin-top: 0;">DANH SÁCH ĐẠI BIỂU CHECK-IN SỰ KIỆN</h2>
+    <p>Kính gửi Ban Thư Ký / Ban Tổ Chức CLB Doanh Nhân CEO 1983,</p>
+    <p>Hệ thống tự động gửi đính kèm file danh sách khách mời / đại biểu đã thực hiện quét mã QR check-in tại sự kiện:</p>
+    <div style="background: #fef2f2; border-left: 4px solid #8B0000; padding: 14px; border-radius: 8px; margin: 16px 0; font-weight: 700; color: #991b1b;">
       ${eventName}
     </div>
     ${
       latestAttendee
         ? `
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #005BAC; padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 13px; color: #1e3a8a;">
-      <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #005BAC;">
+    <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #D4AF37; padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 13px; color: #92400e;">
+      <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #8B0000;">
         🔔 Vừa Có Đại Biểu Hoàn Tất Check-in Điểm Danh:
       </div>
       <div style="line-height: 1.6;">
@@ -3699,7 +3698,7 @@ export class MailService {
     </div>
     <p>File đính kèm (${attachments.length} tệp): <strong>${fileNamesList}</strong></p>
     <p style="font-size: 12px; color: #64748b; margin-top: 30px;">
-      Báo cáo được trích xuất tự động thời gian thực từ Cổng Quản Trị Viện Doanh Trí.
+      Báo cáo được trích xuất tự động thời gian thực từ Cổng Quản Trị CLB Doanh Nhân CEO 1983 (HanoiBA).
     </p>
   </div>
 </body>
@@ -3710,8 +3709,8 @@ export class MailService {
       to: cleanTo,
       subject,
       html,
-      fromName: 'Ban Tổ Chức Viện Doanh Trí',
-      auditContext: `[REPORT_ATTACHMENTS] ${eventName} sent to ${cleanTo}`,
+      fromName: 'CLB Doanh Nhân CEO 1983',
+      auditContext: `[CEO1983_REPORT_CHECKIN] ${cleanTo} - Event: ${eventName} - Attachments: ${attachments.length}`,
       attachments,
     });
   }
@@ -3725,7 +3724,7 @@ export class MailService {
       pollTitle,
       pollDescription = 'Kính mời Quý Đại biểu tham gia bình chọn và đóng góp ý kiến cho sự kiện.',
       voteUrl,
-      eventTitle = 'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TOẠ ĐÀM DOANH NGHIỆP',
+      eventTitle = 'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)',
     } = options;
 
     const cleanTo = (to || '').trim().toLowerCase();
@@ -3733,7 +3732,7 @@ export class MailService {
       return { ok: false, message: 'Invalid recipient email' };
     }
 
-    const subject = `[Viện Doanh Trí] Thư Mời Biểu Quyết / Đóng Góp Ý Kiến: ${pollTitle}`;
+    const subject = `[CEO 1983] Thư Mời Biểu Quyết / Đóng Góp Ý Kiến: ${pollTitle}`;
 
     const html = `
 <!DOCTYPE html>
@@ -3744,22 +3743,22 @@ export class MailService {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
     .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); padding: 35px 24px; text-align: center; color: #ffffff; }
-    .logo-badge { display: inline-block; background: #ffffff; color: #005BAC; font-weight: 900; font-size: 14px; padding: 6px 14px; border-radius: 12px; margin-bottom: 12px; }
+    .header { background: linear-gradient(135deg, #8B0000 0%, #003B95 60%, #D4AF37 100%); padding: 35px 24px; text-align: center; color: #ffffff; }
+    .logo-badge { display: inline-block; background: #ffffff; color: #8B0000; font-weight: 900; font-size: 14px; padding: 6px 14px; border-radius: 12px; margin-bottom: 12px; }
     .title { font-size: 19px; font-weight: 900; margin: 0; line-height: 1.3; }
-    .subtitle { font-size: 11px; color: #e0f2fe; margin-top: 6px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+    .subtitle { font-size: 11px; color: #fef08a; margin-top: 6px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
     .content { padding: 32px 28px; }
-    .poll-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #005BAC; border-radius: 14px; padding: 18px 20px; margin: 24px 0; }
-    .poll-title { font-size: 16px; font-weight: 800; color: #005BAC; margin-bottom: 8px; }
+    .poll-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #8B0000; border-radius: 14px; padding: 18px 20px; margin: 24px 0; }
+    .poll-title { font-size: 16px; font-weight: 800; color: #8B0000; margin-bottom: 8px; }
     .poll-desc { font-size: 13px; color: #475569; line-height: 1.6; margin: 0; }
-    .cta-btn { display: inline-block; background: linear-gradient(135deg, #005BAC, #00A859); color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 14px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(0,91,172,0.35); }
+    .cta-btn { display: inline-block; background: linear-gradient(135deg, #8B0000, #003B95); color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 14px; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(139,0,0,0.35); }
     .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 28px; text-align: center; font-size: 12px; color: #64748b; }
   </style>
 </head>
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="logo-badge">DT · VIỆN DOANH TRÍ</div>
+      <div class="logo-badge">1983 · CLB DOANH NHÂN CEO 1983</div>
       <h1 class="title">THƯ MỜI BIỂU QUYẾT & LẤY Ý KIẾN</h1>
       <div class="subtitle">${eventTitle}</div>
     </div>
@@ -3768,7 +3767,7 @@ export class MailService {
         Kính gửi Anh/Chị: <strong>${fullName}</strong>,
       </p>
       <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 20px 0;">
-        Ban Tổ Chức <strong>Viện Doanh Trí</strong> xin trân trọng cảm ơn Quý Anh/Chị đã có mặt tham dự chương trình. Để nâng cao chất lượng kết nối và ghi nhận ý kiến từ các vị đại biểu, kính mời Quý Anh/Chị tham gia biểu quyết trực tuyến ngay bây giờ:
+        Ban Điều Hành và Ban Tổ Chức <strong>CLB Doanh Nhân CEO 1983 (HanoiBA)</strong> xin trân trọng cảm ơn Quý Anh/Chị đã có mặt tham dự chương trình. Để nâng cao chất lượng kết nối và ghi nhận ý kiến từ các vị đại biểu, kính mời Quý Anh/Chị tham gia biểu quyết trực tuyến ngay bây giờ:
       </p>
 
       <div class="poll-box">
@@ -3787,8 +3786,8 @@ export class MailService {
       </p>
     </div>
     <div class="footer">
-      <strong>VIỆN DOANH TRÍ</strong><br/>
-      Hotline Ban Tổ Chức: 0988.870.888 / 0903.203.204
+      <strong>CLB DOANH NHÂN CEO 1983 (HANOIBA)</strong><br/>
+      Hội Doanh Nhân Trẻ Hà Nội · Hotline Ban Thư Ký: 0988.870.888 / 0903.203.204 | Email: contact@ceo1983.vn
     </div>
   </div>
 </body>
@@ -3799,13 +3798,13 @@ export class MailService {
       to: cleanTo,
       subject,
       html,
-      fromName: 'Ban Tổ Chức Viện Doanh Trí',
+      fromName: 'Ban Tổ Chức CLB Doanh Nhân CEO 1983',
       auditContext: `[POLL_INVITATION] ${pollTitle} sent to ${cleanTo}`,
     });
   }
 
   /**
-   * Gửi email chúc mừng và thông tin phần thưởng cho đại biểu trúng giải Bốc thăm may mắn (Lucky Draw) - Viện Doanh Trí
+   * Gửi email chúc mừng và thông tin phần thưởng cho đại biểu trúng giải Bốc thăm may mắn (Lucky Draw) - CLB Doanh Nhân CEO 1983
    */
   async sendDoanhTriLuckyDrawWinnerEmail(options: {
     to: string;
@@ -3828,9 +3827,9 @@ export class MailService {
     const prizeRank = options.prizeRank || 'Giải Thưởng';
     const prizeDesc = options.prizeDescription || 'Phần quà lưu niệm đặc biệt từ Ban Tổ Chức';
     const company = options.company ? ` - ${options.company}` : '';
-    const eventTitle = options.eventTitle || 'KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ & TRI ÂN NGÀY NHÀ GIÁO VIỆT NAM 20/11';
+    const eventTitle = options.eventTitle || 'SỰ KIỆN CLB DOANH NHÂN CEO 1983 (HANOIBA)';
 
-    const subject = `[Viện Doanh Trí] CHÚC MỪNG ANH/CHỊ ${winnerName.toUpperCase()} ĐÃ TRÚNG ${prizeName.toUpperCase()}!`;
+    const subject = `[CEO 1983] CHÚC MỪNG ANH/CHỊ ${winnerName.toUpperCase()} ĐÃ TRÚNG ${prizeName.toUpperCase()}!`;
 
     const html = `
 <!DOCTYPE html>
@@ -3838,40 +3837,40 @@ export class MailService {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chúc Mừng Trúng Giải Lucky Draw - Viện Doanh Trí</title>
+  <title>Chúc Mừng Trúng Giải Lucky Draw - CLB Doanh Nhân CEO 1983</title>
   <style>
     body { margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .container { max-width: 620px; margin: 20px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header-wave { background: linear-gradient(135deg, #005BAC 0%, #0284C7 50%, #00A859 100%); padding: 36px 24px 28px; text-align: center; color: #ffffff; }
-    .logo-badge { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background-color: #ffffff; color: #005BAC; font-weight: 900; font-size: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 12px; }
-    .header-sub { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #e0f2fe; margin-bottom: 4px; }
+    .header-wave { background: linear-gradient(135deg, #8B0000 0%, #003B95 60%, #D4AF37 100%); padding: 36px 24px 28px; text-align: center; color: #ffffff; }
+    .logo-badge { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background-color: #ffffff; color: #8B0000; font-weight: 900; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 12px; }
+    .header-sub { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fef08a; margin-bottom: 4px; }
     .header-title { font-size: 20px; font-weight: 900; margin: 0; line-height: 1.3; }
     .content { padding: 32px 28px; background-color: #ffffff; }
     .congrats-banner { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border: 2px dashed #f59e0b; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 24px; }
-    .prize-card { background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 18px; padding: 22px; margin-bottom: 24px; text-align: center; }
-    .prize-rank { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0369a1; letter-spacing: 1.5px; margin-bottom: 6px; }
-    .prize-title { font-size: 22px; font-weight: 900; color: #005BAC; margin-bottom: 10px; line-height: 1.3; }
+    .prize-card { background: linear-gradient(135deg, #fffbeb 0%, #fef2f2 100%); border: 1px solid #fed7aa; border-radius: 18px; padding: 22px; margin-bottom: 24px; text-align: center; }
+    .prize-rank { font-size: 12px; font-weight: 800; text-transform: uppercase; color: #9a3412; letter-spacing: 1.5px; margin-bottom: 6px; }
+    .prize-title { font-size: 22px; font-weight: 900; color: #8B0000; margin-bottom: 10px; line-height: 1.3; }
     .prize-desc { font-size: 14px; color: #334155; line-height: 1.5; font-weight: 500; }
-    .instruction-box { background-color: #f8fafc; border-radius: 14px; padding: 18px; border-left: 4px solid #00A859; margin-bottom: 24px; }
+    .instruction-box { background-color: #f8fafc; border-radius: 14px; padding: 18px; border-left: 4px solid #D4AF37; margin-bottom: 24px; }
     .footer { background-color: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.6; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header-wave">
-      <div class="logo-badge">DT</div>
-      <div class="header-sub">VIỆN DOANH TRÍ • VÒNG QUAY MAY MẮN</div>
+      <div class="logo-badge">1983</div>
+      <div class="header-sub">CLB DOANH NHÂN CEO 1983 (HANOIBA) • VÒNG QUAY MAY MẮN</div>
       <h1 class="header-title">CHÚC MỪNG TRÚNG THƯỞNG!</h1>
     </div>
     <div class="content">
       <div class="congrats-banner">
         <div style="font-size: 32px; margin-bottom: 6px;">🎉 🏆 🎁</div>
         <div style="font-size: 13px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 1px;">KẾT QUẢ BỐC THĂM MAY MẮN</div>
-        <div style="font-size: 18px; font-weight: 900; color: #1e293b; margin-top: 4px;">Kính chúc mừng Anh/Chị: <span style="color: #005BAC;">${winnerName}</span>${company}</div>
+        <div style="font-size: 18px; font-weight: 900; color: #1e293b; margin-top: 4px;">Kính chúc mừng Anh/Chị: <span style="color: #8B0000;">${winnerName}</span>${company}</div>
       </div>
 
       <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 20px 0;">
-        Ban Lãnh Đạo và Ban Tổ Chức <strong>Viện Doanh Trí</strong> xin gửi lời chúc mừng nồng nhiệt nhất tới Quý Anh/Chị đã trở thành người may mắn trúng giải thưởng tại chương trình <strong>${eventTitle}</strong>:
+        Ban Điều Hành và Ban Tổ Chức <strong>CLB Doanh Nhân CEO 1983 (HanoiBA)</strong> xin gửi lời chúc mừng nồng nhiệt nhất tới Quý Anh/Chị đã trở thành người may mắn trúng giải thưởng tại chương trình <strong>${eventTitle}</strong>:
       </p>
 
       <div class="prize-card">
@@ -3889,13 +3888,13 @@ export class MailService {
       </div>
 
       <p style="font-size: 13px; color: #64748b; text-align: center; margin: 0;">
-        Trân trọng cảm ơn sự hiện diện và đồng hành của Quý Anh/Chị cùng Viện Doanh Trí!
+        Trân trọng cảm ơn sự hiện diện và đồng hành của Quý Anh/Chị cùng CLB Doanh Nhân CEO 1983!
       </p>
     </div>
     <div class="footer">
-      <strong>VIỆN DOANH TRÍ</strong><br/>
-      Địa điểm: Tầng 2, Nhà hàng Long Phụng, 29T2 Hoàng Đạo Thúy, Hà Nội<br/>
-      Hotline Ban Tổ Chức: <strong>0988.870.888 / 0903.203.204</strong>
+      <strong>CLB DOANH NHÂN CEO 1983 (HANOIBA)</strong><br/>
+      Hội Doanh Nhân Trẻ Hà Nội · Gắn kết — Chia sẻ — Cùng phát triển<br/>
+      Hotline Ban Thư Ký: <strong>0988.870.888 / 0903.203.204</strong> | Email: <strong>contact@ceo1983.vn</strong>
     </div>
   </div>
 </body>
@@ -3906,7 +3905,7 @@ export class MailService {
       to: cleanTo,
       subject,
       html,
-      fromName: 'Ban Tổ Chức Viện Doanh Trí',
+      fromName: 'CLB Doanh Nhân CEO 1983',
       auditContext: `[LUCKY_DRAW_WINNER] ${prizeName} to ${winnerName} (${cleanTo})`,
     });
   }

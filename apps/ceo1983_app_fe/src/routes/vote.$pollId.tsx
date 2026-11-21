@@ -32,8 +32,8 @@ export const Route = createFileRoute("/vote/$pollId")({
     if (!poll) {
       poll = {
         id: params.pollId,
-        title: "Đánh Giá Chất Lượng Chương Trình & Toạ Đàm Doanh Nghiệp 2027",
-        description: "Khảo sát ý kiến đóng góp của Quý Đại biểu tham dự sự kiện Kỷ niệm 4 năm thành lập Viện Doanh Trí.",
+        title: "Khảo Sát Ý Kiến & Biểu Quyết Sự Kiện CLB Doanh Nhân CEO 1983",
+        description: "Khảo sát ý kiến đóng góp của Quý Hội viên & Đại biểu CLB Doanh Nhân CEO 1983.",
         status: "open",
         isStarRating: true,
         averageRating: 4.9,
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/vote/$pollId")({
           { id: "opt-1", title: "1★ - Rất không hài lòng", votesCount: 0, percentage: 0, isLeading: false },
         ],
         totalVotes: 45,
-        eventName: "CHƯƠNG TRÌNH KỶ NIỆM 4 NĂM THÀNH LẬP VIỆN DOANH TRÍ",
+        eventName: "CLB DOANH NHÂN CEO 1983 (HANOIBA)",
       };
     }
     return { poll };
@@ -61,12 +61,12 @@ export const Route = createFileRoute("/vote/$pollId")({
     meta: [
       {
         title: `Biểu Quyết / Lấy Ý Kiến: ${
-          loaderData?.poll?.title || "Viện Doanh Trí"
+          loaderData?.poll?.title || "CLB Doanh Nhân CEO 1983"
         }`,
       },
       {
         name: "description",
-        content: "Cổng biểu quyết và khảo sát ý kiến trực tuyến sự kiện Viện Doanh Trí.",
+        content: "Cổng biểu quyết và khảo sát ý kiến trực tuyến CLB Doanh Nhân CEO 1983.",
       },
     ],
   }),
@@ -250,17 +250,17 @@ export function PublicPollVotePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/60 to-emerald-50/40 text-slate-800 antialiased flex flex-col justify-between selection:bg-[#005BAC] selection:text-white">
-      {/* Top Header Nhận Diện Viện Doanh Trí */}
-      <header className="bg-gradient-to-r from-[#005BAC] via-[#0284C7] to-[#00A859] px-4 sm:px-8 py-3.5 text-white shadow-md">
+      {/* Top Header Nhận Diện CLB Doanh Nhân CEO 1983 */}
+      <header className="bg-gradient-to-r from-[#8B0000] via-[#003B95] to-[#D4AF37] px-4 sm:px-8 py-3.5 text-white shadow-md">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white text-[#005BAC] font-black flex items-center justify-center text-lg shadow-md ring-2 ring-emerald-300">
-              DT
+            <div className="w-10 h-10 rounded-2xl bg-white text-[#8B0000] font-black flex items-center justify-center text-sm shadow-md ring-2 ring-amber-300">
+              1983
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-200 flex items-center gap-1">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-200 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-yellow-300" />
-                VIỆN DOANH TRÍ · LẤY Ý KIẾN TRỰC TUYẾN
+                CLB DOANH NHÂN CEO 1983 · LẤY Ý KIẾN TRỰC TUYẾN
               </span>
               <h1 className="text-sm sm:text-base font-black tracking-tight text-white line-clamp-1">
                 Cổng Biểu Quyết & Khảo Sát Ý Kiến Đại Biểu
@@ -339,8 +339,8 @@ export function PublicPollVotePage() {
                 Đã có <strong>{poll.totalVotes || 0}</strong> lượt biểu quyết
               </span>
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#00A859]" />
-                {poll.eventName || "Kỷ Niệm 4 Năm Viện Doanh Trí"}
+                <Calendar className="w-3.5 h-3.5 text-[#003B95]" />
+                {poll.eventName || "CLB Doanh Nhân CEO 1983"}
               </span>
               <span className="flex items-center gap-1 text-emerald-700 font-semibold ml-auto">
                 <Lock className="w-3.5 h-3.5 text-emerald-600" />
@@ -704,10 +704,10 @@ export function PublicPollVotePage() {
         </div>
       </main>
 
-      {/* Footer Bản Quyền Viện Doanh Trí */}
+      {/* Footer Bản Quyền CLB Doanh Nhân CEO 1983 */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
         <div className="max-w-xl mx-auto px-4 space-y-1">
-          <p className="font-bold text-[#005BAC]">VIỆN DOANH TRÍ · KỶ NIỆM 4 NĂM</p>
+          <p className="font-bold text-[#8B0000]">CLB DOANH NHÂN CEO 1983 (HANOIBA)</p>
           <p className="text-[11px] text-slate-500">
             Hệ thống biểu quyết & Khảo sát ý kiến Đại biểu Trực tuyến Bảo mật Cao
           </p>

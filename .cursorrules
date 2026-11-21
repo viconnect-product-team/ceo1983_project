@@ -1,6 +1,18 @@
 # ==============================================================================
 # BỘ LUẬT DỰ ÁN (PROJECT RULES & AI CODEGEN STANDARDS) - CEO 1983 PROJECT
 # Vai trò: Tech Lead | Định dạng: .cursorrules
+# 21/11/2026 (v12.00) — XÓA SẠCH TOÀN BỘ DATA FAKE VIỆN DOANH TRÍ, TRẢ LẠI FORMAT CHUẨN CEO 1983 (HANOIBA) GIỮ NGUYÊN 100% TÍNH NĂNG [NODE-CRM-004], [NODE-CRM-005], [NODE-APP-004], [NODE-APP-005], [NODE-CORE-002]:
+#   * XÓA TOÀN BỘ DATA VÀ HARDCODE VIỆN DOANH TRÍ:
+#       - Loại bỏ hoàn toàn fallback event id 'event-doanhtri-20261121' và các truy vấn lọc cứng ILIKE '%doanhtri%'.
+#       - Toàn bộ backend và frontend tự động truy vấn sự kiện thực tế trong CSDL chuẩn 113.20.107.184:6432.
+#       - Thay thế email nhận báo cáo 'viendoanhtri.iem@gmail.com' bằng 'banbientap@ceo1983.vn' (CEO1983_REPORT_EMAIL).
+#       - Thay thế email định danh tạm thời '@doanhtri.vn' bằng '@ceo1983.vn'.
+#   * TRẢ LẠI FORMAT VÀ NHẬN DIỆN THƯƠNG HIỆU CHUẨN CLB DOANH NHÂN CEO 1983:
+#       - 3 màu thương hiệu chuẩn: Đỏ Bordeaux (#8B0000), Xanh Navy (#003B95), Vàng Kim (#D4AF37).
+#       - Logo 1983, tên tổ chức CLB DOANH NHÂN CEO 1983 (HANOIBA), Slogan 'Gắn kết - Chia sẻ - Cùng phát triển'.
+#       - Toàn bộ mẫu biểu Excel, Word, PDF, email thông báo check-in, email trúng giải Lucky Draw, email khảo sát biểu quyết.
+#       - Giữ trọn vẹn 100% các tính năng: Check-in QR, auto-report 3 file, realtime 10s CRM, Lucky Draw realtime, Voting.
+#       - Cả hai phân hệ apps/ceo1983_app_be và apps/ceo1983_app_fe đều đạt exit code 0 (0 errors) typecheck `tsc --noEmit`.
 # 19/11/2026 (v11.71) — TRIỆT TIÊU 100% PHỤ THUỘC SUPABASE & LOVABLE, SỬA LỖI CI/CD TS7006 (0 ERRORS):
 #   * SỬA TRIỆT ĐỂ LỖI GITHUB ACTIONS RUN #162 (PR #54) TS7006 "Parameter implicitly has an any type":
 #       - Khắc phục toàn bộ 19 lỗi TS7006 do untyped callback parameters trong các tệp server functions và repositories.

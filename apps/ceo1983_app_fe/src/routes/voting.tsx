@@ -776,14 +776,10 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
         const items = Array.isArray(res) ? res : res?.items || [];
         setEventsList(items);
         if (!eventId && items.length > 0) {
-          const dtEvent =
-            items.find((e: any) =>
-              String(e.id).includes("doanhtri") ||
-              String(e.title || (e as any).name).toLowerCase().includes("doanh trí"),
-            ) || items[0];
-          if (dtEvent) {
-            setEventId(dtEvent.id);
-            fetchCheckedInAttendees(dtEvent.id);
+          const firstEvent = items[0];
+          if (firstEvent) {
+            setEventId(firstEvent.id);
+            fetchCheckedInAttendees(firstEvent.id);
           }
         }
       })
@@ -941,7 +937,7 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
               maxLength={300}
               placeholder={
                 voteFormat === "star_rating"
-                  ? "Ví dụ: Đánh giá chất lượng chương trình Kỷ niệm 4 năm Viện Doanh Trí..."
+                  ? "Ví dụ: Đánh giá chất lượng chương trình Hội nghị & Toạ đàm CLB CEO 1983..."
                   : "Nội dung bình chọn..."
               }
               className={inputCls}
@@ -1015,14 +1011,10 @@ function VoteModal({ vote, onClose }: { vote?: Vote; onClose: () => void }) {
                 setTargetAudience(val);
                 if (val === "checked_in") {
                   if (!eventId && eventsList.length > 0) {
-                    const dtEvent =
-                      eventsList.find((ev: any) =>
-                        String(ev.id).includes("doanhtri") ||
-                        String(ev.title || (ev as any).name).toLowerCase().includes("doanh trí"),
-                      ) || eventsList[0];
-                    if (dtEvent) {
-                      setEventId(dtEvent.id);
-                      fetchCheckedInAttendees(dtEvent.id);
+                    const firstEvent = eventsList[0];
+                    if (firstEvent) {
+                      setEventId(firstEvent.id);
+                      fetchCheckedInAttendees(firstEvent.id);
                     }
                   } else if (eventId) {
                     fetchCheckedInAttendees(eventId);

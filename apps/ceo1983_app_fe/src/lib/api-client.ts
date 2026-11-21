@@ -117,7 +117,7 @@ export function resolveMediaUrl(url: string | null | undefined): string | null {
   const trimmed = url.trim();
   if (!trimmed || isDeadAvatarUrl(trimmed)) return null;
 
-  // Banner kỷ niệm 4 năm Viện Doanh Trí (đảm bảo không bao giờ bị 404)
+  // Banner kỷ niệm CLB Doanh Nhân CEO 1983 (đảm bảo không bao giờ bị 404)
   if (trimmed.includes("ky_niem_4_nam_vien_doanh_tri")) {
     return KY_NIEM_4_NAM_BANNER_URL;
   }
