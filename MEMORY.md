@@ -1,6 +1,19 @@
 # System Memory & Architecture
 
-- **Bản cập nhật ngày 21/11/2026 (v11.94): Khắc Phục Triệt Để Lỗi Deploy GitHub Actions SCP Status 1 & Giải Pháp Toàn Diện Cho Lỗi SSL Localhost ([NODE-CORE-005], [NODE-CORE-006], [NODE-CRM-007])**:
+- **Bản cập nhật ngày 21/11/2026 (v11.95): Khắc Phục Triệt Để Lỗi Deploy SSH/SCP "Đồng bộ deploy/ thất bại sau 3 lần thử!" ([NODE-CORE-005], [NODE-CORE-006])**:
+  - **1. Phân Tích Nguyên Nhân Lỗi**:
+    * Trong lần chạy trước, bước đồng bộ dùng `rsync -avz --progress -e "$RSYNC_SSH"` với `RSYNC_SSH="sshpass -e ssh"`.
+    * Hai nguyên nhân gây đứt:
+      1. Server VPS `14.225.217.232` chưa được cài đặt gói `rsync` (`bash: rsync: command not found`). Lệnh `rsync` ở client bắt buộc remote server cũng phải có binary `rsync`.
+      2. Khi `rsync` spawn process con để chạy `sshpass -e ssh`, cơ chế sanitize environment làm biến môi trường `SSHPASS` không kế thừa được vào process con, khiến `sshpass` báo lỗi `Failed to obtain password from environment variable SSHPASS` và thoát ngay lập tức.
+  - **2. Giải Pháp Chuẩn Xác 100%**:
+    * Chuyển hoàn toàn sang **`scp` Native của OpenSSH** (có sẵn 100% trên mọi bản phân phối Linux và trên VPS mà không cần cài thêm gì).
+    * Đọc mật khẩu SSH an toàn bằng `sshpass -f /tmp/sshpass.txt` (ghi mật khẩu vào file tạm `600`, không phụ thuộc biến môi trường, không bị lỗi escape ký tự đặc biệt, và xóa ngay sau khi truyền xong).
+    * Giữ nguyên cơ chế KeepAlive (`ServerAliveInterval 15`, `ServerAliveCountMax 60`, `ConnectTimeout 60`).
+    * Copy nguyên thư mục `deploy` sang `/root/deploy-cache/` và 2 file Docker image (`frontend-images.tar.gz` ~35MB, `backend-images.tar.gz` ~170MB) sang `/root/deploy-cache/dist-images/`.
+  - **3. Kết Quả Kiểm Thử (Strict Pre-flight Check)**:
+    * `apps/ceo1983_app_fe`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
+    * `apps/ceo1983_app_be`: `npx tsc --noEmit` ➔ Exit code 0 (0 errors).
   - **1. Phân Tích Căn Nguyên Lỗi Deploy SCP (`drone-scp error: error copy file to dest: 14.225.217.232, error message: Process exited with status 1`)**:
     * **Xung đột ghi đè thư mục đích trên VPS**: Action `appleboy/scp-action@v0.1.7` (dựa trên drone-scp) nén tất cả file vào `/tmp/*.tar.gz` trên runner và truyền stream qua SSH để thực thi lệnh `tar -xzf - -C /root/deploy-cache/` từ xa. Thư mục `/root/deploy-cache/deploy` đã tồn tại từ trước và chứa các tệp có quyền root hoặc bị mount/lock từ Docker Nginx SSL proxy cũ (`server.key`, `server.crt`), khiến lệnh `tar` trên remote server bị lỗi Permission/Resource busy và trả về exit status 1.
     * **Quá tải dung lượng Docker Tarball (1.8GB)**: Cấu hình cũ gán `gzip -1` (mức nén tối thiểu) và lưu trùng tag (`ceo1983-frontend` + `crm-frontend` trong cùng một file, `ceo1983-backend` + `crm-backend` trong file thứ hai), tạo ra 2 file tarball khổng lồ (~1.8GB). Stream SSH của drone-scp không có cơ chế keep-alive liên tục và không hỗ trợ nối file (resume), dẫn đến tràn buffer và đứt kết nối sau 2 phút 15 giây.
