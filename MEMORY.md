@@ -1,5 +1,15 @@
 # System Memory & Architecture
 
+- **Bản cập nhật ngày 21/11/2026 (v11.93): Khắc Phục Lỗi CI/CD GitHub Actions Đóng Gói Docker & Triển Khai Subdomains ([NODE-CORE-005], [NODE-CORE-006])**:
+  - **1. Phân Tích Nguyên Nhân Lỗi GitHub Actions Runner (`Process completed with exit code 1`)**:
+    * **Xung đột Rollup Client Bundle**: Trong file `auth-middleware.ts`, lệnh `import * as crypto from 'crypto'` gây ra lỗi Rollup khi đóng gói client (`"createHmac" is not exported by "__vite-browser-external"`). Đã loại bỏ hoàn toàn `crypto` top-level và thay bằng decode JWT payload tương thích cả Browser lẫn Node.js runtime.
+    * **Giới hạn RAM trên GitHub Runner (7GB)**: Cấu hình cũ gán `NODE_OPTIONS: "--max-old-space-size=8192"` (8GB) vượt quá ngưỡng RAM vật lý 7GB của runner `ubuntu-latest`, dẫn đến nguy cơ bị Linux OOM Killer bắn hạ tiến trình khi Vite compile đồng thời Client và SSR. Đã điều chỉnh về ngưỡng an toàn 5GB (`5120MB`).
+    * **Nguy cơ đầy ổ đĩa khi đóng gói Docker**: Hai image frontend và backend khi nén `.tar.gz` chiếm dung lượng lớn. Đã thêm step giải phóng đĩa (`sudo rm -rf /usr/share/dotnet /usr/local/lib/android ...`) giúp giải phóng hơn 20GB không gian trống cho runner.
+    * **Cấu hình Secret SSH**: Nếu repository GitHub chưa thiết lập `SSH_PASSWORD` (mật khẩu root server `14.225.217.232`) hoặc `SSH_PRIVATE_KEY`, workflow sẽ chủ động dừng với thông báo hướng dẫn cấu hình chi tiết.
+  - **2. Kết Quả Kiểm Thử**:
+    * Build Frontend (`vite build` + Nitro SSR): Thành công 100% trong 6m22s.
+    * Build Backend (`nest build`): Thành công 100% với exit code 0.
+
 - **Bản cập nhật ngày 20/11/2026 (v11.92): Hoàn Thiện Bộ Nhận Diện Banner Kỷ Niệm 4 Năm Viện Doanh Trí (Ảnh 1), Khắc Phục Triệt Để Lỗi SSL Localhost (Ảnh 2) & Tách Biệt Hoàn Toàn Trang Quay Thưởng Landing Web Sân Khấu Gala Độc Lập (Ảnh 3) ([NODE-CRM-007], [NODE-CRM-014], [NODE-CORE-002])**:
   - **1. Chuẩn Hóa Bộ Nhận Diện Thương Hiệu Viện Doanh Trí Theo Ảnh 1 (`VienDoanhTriBrandBanner.tsx`)**:
     * **Đồ Họa & Bố Cục**:

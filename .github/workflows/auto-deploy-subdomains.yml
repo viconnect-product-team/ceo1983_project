@@ -72,6 +72,11 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Dọn dẹp dung lượng ổ đĩa GitHub Runner (Chống đầy ổ đĩa)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL 2>/dev/null || true
+          df -h
+
       - name: Cài đặt dependencies
         run: npm install --legacy-peer-deps
 
@@ -80,9 +85,14 @@ jobs:
           cd packages/db
           npx prisma generate
 
-      - name: Build Frontend với Heap Memory 8GB (Chống tràn RAM)
+      - name: Sinh routes cho Frontend
+        run: |
+          cd apps/ceo1983_app_fe
+          node scripts/gen-routes.mjs
+
+      - name: Build Frontend với Heap Memory 5GB (Chống tràn RAM)
         env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
+          NODE_OPTIONS: "--max-old-space-size=5120"
           NEST_API_URL: "http://backend:4000"
         run: |
           npm run build --prefix apps/ceo1983_app_fe
