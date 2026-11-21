@@ -125,7 +125,7 @@ jobs:
             exit 1
           fi
 
-      - name: Chuẩn bị thư mục và dọn dẹp cache cũ trên VPS
+      - name: Chuẩn bị thư mục và dọn dẹp giải phóng dung lượng ổ đĩa trên VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ env.SERVER_IP }}
@@ -136,15 +136,24 @@ jobs:
           timeout: 300s
           command_timeout: 300s
           script: |
-            echo ">>> [1/2] Dọn dẹp sạch sẽ thư mục deploy-cache để chống lỗi Permission/Conflict..."
-            rm -rf /root/deploy-cache
+            echo ">>> [1/4] Dọn dẹp sạch sẽ thư mục deploy-cache và tệp nén của CEO 1983..."
+            rm -rf /root/deploy-cache /tmp/*frontend-images*.tar.gz /tmp/*backend-images*.tar.gz /root/association/*.tar.gz /root/crm/*.tar.gz
             mkdir -p /root/deploy-cache/dist-images
             mkdir -p /root/deploy-cache/deploy
             
-            echo ">>> [2/2] Giải phóng dung lượng ổ đĩa VPS..."
-            docker system prune -f 2>/dev/null || true
+            echo ">>> [2/4] Xả sạch log của riêng các container CEO 1983 & CRM..."
+            for cid in $(docker ps -a --filter "name=ceo1983" --filter "name=crm" -q 2>/dev/null); do
+              lpath=$(docker inspect --format='{{.LogPath}}' "$cid" 2>/dev/null)
+              [ -n "$lpath" ] && [ -f "$lpath" ] && truncate -s 0 "$lpath" 2>/dev/null || true
+            done
+            journalctl --vacuum-size=50M 2>/dev/null || true
+            apt-get clean 2>/dev/null || true
+
+            echo ">>> [3/4] Giải phóng Docker dangling images (<none>) và builder cache..."
+            docker image prune -f 2>/dev/null || true
             docker builder prune -f 2>/dev/null || true
-            echo "=== DUNG LƯỢNG Ổ ĐĨA HIỆN TẠI TRÊN VPS ==="
+
+            echo ">>> [4/4] KIỂM TRA DUNG LƯỢNG Ổ ĐĨA TRÊN VPS SAU KHI DỌN DẸP:"
             df -h /
 
       - name: Đẩy images và cấu hình sang Server VPS qua SSH Pipe Stream
@@ -319,6 +328,13 @@ jobs:
             cd /root/ssl-proxy
             sed -i 's/\r$//' nginx.conf docker-compose.ssl.yml setup-ssl.sh 2>/dev/null || true
             bash setup-ssl.sh 2>&1 || echo ">>> [Canh bao] setup-ssl.sh co canh bao nhung cac container van chay on dinh."
+
+            echo ">>> [6/6] Dọn dẹp tệp tin tạm deploy-cache để tiết kiệm dung lượng đĩa VPS..."
+            rm -rf /root/deploy-cache 2>/dev/null || true
+            docker image prune -f 2>/dev/null || true
+            docker builder prune -f 2>/dev/null || true
+            echo "=== DUNG LƯỢNG Ổ ĐĨA TRÊN VPS SAU KHI TRIỂN KHAI HOÀN TẤT ==="
+            df -h /
 
             echo "=========================================================================="
             echo " AUTO DEPLOY SUBDOMAINS HOÀN TẤT THÀNH CÔNG!"
