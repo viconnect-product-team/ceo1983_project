@@ -2874,17 +2874,100 @@ export class EventsService implements OnModuleInit {
       return { attendee, result, seatAssignment: attendee.seatAssignment };
     }
 
-    // 2. Fallback to public.attendees
-    const rows = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM public.attendees WHERE id = ${attendeeId} LIMIT 1
+    // 2. Fallback to public.members or public.attendees
+    const memberRows = await this.prisma.$queryRaw<any[]>`
+      SELECT id, code, name, email, phone, company, company_name, executive_role, position, association_id
+      FROM public.members
+      WHERE id = ${attendeeId} OR code = ${attendeeId} OR user_id::text = ${attendeeId}
+      LIMIT 1
     `.catch(() => []);
-    const cur = rows?.[0];
-    if (!cur) {
-      throw new NotFoundException('Attendee not found');
+
+    let cur: any = null;
+    let isFromMember = false;
+    if (memberRows.length > 0) {
+      cur = memberRows[0];
+      isFromMember = true;
+    } else {
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT * FROM public.attendees WHERE id = ${attendeeId} LIMIT 1
+      `.catch(() => []);
+      cur = rows?.[0];
     }
+
+    if (!cur) {
+      throw new NotFoundException('Không tìm thấy thông tin đại biểu');
+    }
+
     const already = Boolean(cur.checked_in);
     const result = already ? 'already' : 'success';
-    if (!already) {
+
+    // Đồng bộ ngay vào event_registrations để CRM hiển thị ngay lập tức
+    const activeEvt = await this.prisma.$queryRaw<any[]>`
+      SELECT id, association_id FROM public.events WHERE status != 'cancelled' ORDER BY date DESC LIMIT 1
+    `.catch(() => []);
+    const targetEventId = activeEvt[0]?.id || 'latest';
+    const targetAssoc =
+      activeEvt[0]?.association_id ||
+      cur.association_id ||
+      'c1983000-0000-4000-8000-000000001983';
+
+    const newRegId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+    const ticketMeta = JSON.stringify({
+      fullName: cur.name,
+      phone: cur.phone || '',
+      company: cur.company || cur.company_name || 'CEO 1983',
+      position: cur.position || cur.executive_role || cur.title || 'Hội viên',
+      checkinStatus: 'on_time',
+      checkedIn: true,
+      type: 'standard',
+      label: 'Vé Tham Dự',
+    });
+
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `
+        INSERT INTO public.event_registrations (
+          id, event_id, member_code, member_name, email,
+          registered_at, checked_in_at, status, ticket_type, association_id,
+          created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          NOW()::date, NOW(), 'attended', $6, $7::uuid,
+          NOW(), NOW()
+        )
+      `,
+        newRegId,
+        String(targetEventId),
+        cur.code || `GUEST-${Math.floor(1000 + Math.random() * 9000)}`,
+        cur.name || 'Hội viên',
+        cur.email || '',
+        ticketMeta,
+        targetAssoc,
+      );
+    } catch {
+      await this.prisma.$executeRawUnsafe(
+        `
+        INSERT INTO public.event_registrations (
+          id, event_id, member_code, member_name, email,
+          registered_at, status, ticket_type, association_id,
+          created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          NOW()::date, 'attended', $6, $7::uuid,
+          NOW(), NOW()
+        )
+      `,
+        newRegId,
+        String(targetEventId),
+        cur.code || `GUEST-${Math.floor(1000 + Math.random() * 9000)}`,
+        cur.name || 'Hội viên',
+        cur.email || '',
+        ticketMeta,
+        targetAssoc,
+      ).catch(() => {});
+    }
+
+    if (!isFromMember && !already) {
       await this.prisma.$executeRaw`
         UPDATE public.attendees SET checked_in = true, updated_at = now() WHERE id = ${attendeeId}
       `.catch(() => null);
@@ -3153,6 +3236,7 @@ export class EventsService implements OnModuleInit {
     }
 
     if (!reg && scannedMemberCode) {
+      const targetEvtId = body.currentEventId || scannedEventId || null;
       const regRows = await this.prisma
         .$queryRawUnsafe<any[]>(
           `
@@ -3166,18 +3250,28 @@ export class EventsService implements OnModuleInit {
         LEFT JOIN public.events e ON e.id = r.event_id
         LEFT JOIN public.members m ON (m.code = r.member_code OR m.id = r.member_id)
         WHERE (r.member_code = $1 OR m.code = $1)
+          AND ($2::text IS NULL OR r.event_id::text = $2)
           AND r.status != 'cancelled'
         ORDER BY r.registered_at DESC
         LIMIT 1
       `,
           scannedMemberCode,
+          targetEvtId,
         )
         .catch(() => []);
       if (regRows.length > 0) reg = regRows[0];
     }
 
     // 4. Resolve Event Details
-    const resolvedEventId = reg?.event_id || scannedEventId;
+    let resolvedEventId = reg?.event_id || scannedEventId || body.currentEventId;
+    if (!resolvedEventId) {
+      const activeEvt = await this.prisma.$queryRaw<any[]>`
+        SELECT id FROM public.events WHERE status != 'cancelled' ORDER BY date DESC LIMIT 1
+      `.catch(() => []);
+      if (activeEvt.length > 0) {
+        resolvedEventId = activeEvt[0].id;
+      }
+    }
     let eventRow: any = null;
     if (resolvedEventId) {
       const eRows = await this.prisma
@@ -3338,16 +3432,25 @@ export class EventsService implements OnModuleInit {
       isCheckedIn = true;
 
       if (reg?.id) {
-        await this.prisma
-          .$executeRawUnsafe(
+        try {
+          await this.prisma.$executeRawUnsafe(
             `
-          UPDATE public.event_registrations
-          SET checked_in_at = NOW(), status = 'attended', updated_at = NOW()
-          WHERE id = $1
-        `,
+            UPDATE public.event_registrations
+            SET checked_in_at = NOW(), status = 'attended', updated_at = NOW()
+            WHERE id = $1
+          `,
             reg.id,
-          )
-          .catch(() => {});
+          );
+        } catch {
+          await this.prisma.$executeRawUnsafe(
+            `
+            UPDATE public.event_registrations
+            SET status = 'attended', updated_at = NOW()
+            WHERE id = $1
+          `,
+            reg.id,
+          ).catch(() => {});
+        }
       } else if (resolvedEventId) {
         // Tự động đồng bộ đại biểu check-in mới chưa đăng ký trước vào bảng event_registrations để CRM hiển thị ngay
         const newRegId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
@@ -3366,36 +3469,53 @@ export class EventsService implements OnModuleInit {
           label: ticketType,
         });
 
-        await this.prisma
-          .$executeRawUnsafe(
+        try {
+          await this.prisma.$executeRawUnsafe(
             `
-          INSERT INTO public.event_registrations (
-            id, event_id, member_code, member_name, email, phone,
-            company, position, checkin_status,
-            registered_at, checked_in_at, status, ticket_type, qr_payload,
-            payment_status, payment_amount, association_id,
-            created_at, updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6,
-            $7, $8, 'on_time',
-            NOW()::date, NOW(), 'attended', $9, $10,
-            'free', 0, $11::uuid,
-            NOW(), NOW()
-          )
-        `,
+            INSERT INTO public.event_registrations (
+              id, event_id, member_code, member_name, email,
+              registered_at, checked_in_at, status, ticket_type, association_id,
+              created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5,
+              NOW()::date, NOW(), 'attended', $6, $7::uuid,
+              NOW(), NOW()
+            )
+          `,
             newRegId,
-            resolvedEventId,
+            String(resolvedEventId),
             finalMemberCode,
             attendeeName,
             memberRow?.email || '',
-            attendeePhone,
-            attendeeCompany,
-            attendeePosition,
-            ticketMeta,
             ticketMeta,
             autoAssocId,
-          )
-          .catch(() => {});
+          );
+        } catch (firstErr: any) {
+          try {
+            await this.prisma.$executeRawUnsafe(
+              `
+              INSERT INTO public.event_registrations (
+                id, event_id, member_code, member_name, email,
+                registered_at, status, ticket_type, association_id,
+                created_at, updated_at
+              ) VALUES (
+                $1, $2, $3, $4, $5,
+                NOW()::date, 'attended', $6, $7::uuid,
+                NOW(), NOW()
+              )
+            `,
+              newRegId,
+              String(resolvedEventId),
+              finalMemberCode,
+              attendeeName,
+              memberRow?.email || '',
+              ticketMeta,
+              autoAssocId,
+            );
+          } catch (secErr: any) {
+            this.logger.error(`Failed to insert event_registrations on scan: ${secErr?.message}`);
+          }
+        }
       }
 
       const assocId =
@@ -3573,47 +3693,90 @@ export class EventsService implements OnModuleInit {
     const checkinStatus: 'on_time' | 'late' =
       now.getTime() <= thresholdDate.getTime() ? 'on_time' : 'late';
 
+    const targetAssoc =
+      body.associationId ||
+      'c1983000-0000-4000-8000-000000001983';
+    const ticketMeta = JSON.stringify({
+      fullName: memberName,
+      phone: body.phone || '',
+      company: body.company || '',
+      position: body.position || '',
+      seatAssignment,
+      checkinStatus,
+      checkedIn,
+      type: 'standard',
+      label: ticketType,
+    });
+
     if (existing.length > 0) {
       regId = existing[0].id;
-      await this.prisma
-        .$executeRawUnsafe(
+      try {
+        await this.prisma.$executeRawUnsafe(
           `
-        UPDATE public.event_registrations
-        SET checked_in_at = ${checkedIn ? 'NOW()' : 'checked_in_at'},
-            checkin_status = ${checkedIn ? `'${checkinStatus}'` : 'checkin_status'},
-            seat_assignment = COALESCE($1, seat_assignment),
-            payment_status = $2,
-            updated_at = NOW()
-        WHERE id = $3
-      `,
-          seatAssignment,
-          paymentStatus,
+          UPDATE public.event_registrations
+          SET checked_in_at = ${checkedIn ? 'NOW()' : 'checked_in_at'},
+              status = 'confirmed',
+              ticket_type = $1,
+              updated_at = NOW()
+          WHERE id = $2
+        `,
+          ticketMeta,
           regId,
-        )
-        .catch(() => null);
+        );
+      } catch {
+        await this.prisma.$executeRawUnsafe(
+          `
+          UPDATE public.event_registrations
+          SET status = 'confirmed',
+              ticket_type = $1,
+              updated_at = NOW()
+          WHERE id = $2
+        `,
+          ticketMeta,
+          regId,
+        ).catch(() => null);
+      }
     } else {
       regId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
-      await this.prisma
-        .$executeRawUnsafe(
+      try {
+        await this.prisma.$executeRawUnsafe(
           `
-        INSERT INTO public.event_registrations (
-          id, event_id, member_code, member_name, email, registered_at, status,
-          ticket_type, seat_assignment, payment_status, reminder_count, checked_in_at, checkin_status, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, NOW(), 'confirmed',
-          $6, $7, $8, 0, ${checkedIn ? 'NOW()' : 'NULL'}, ${checkedIn ? `'${checkinStatus}'` : "''"}, NOW(), NOW()
-        )
-      `,
+          INSERT INTO public.event_registrations (
+            id, event_id, member_code, member_name, email, registered_at, checked_in_at, status,
+            ticket_type, association_id, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, NOW()::date, ${checkedIn ? 'NOW()' : 'NULL'}, 'confirmed',
+            $6, $7::uuid, NOW(), NOW()
+          )
+        `,
           regId,
           eventId,
-          memberCode,
+          memberCode || `GUEST-${Math.floor(1000 + Math.random() * 9000)}`,
           memberName,
           email,
-          ticketType,
-          seatAssignment,
-          paymentStatus,
-        )
-        .catch(() => null);
+          ticketMeta,
+          targetAssoc,
+        );
+      } catch {
+        await this.prisma.$executeRawUnsafe(
+          `
+          INSERT INTO public.event_registrations (
+            id, event_id, member_code, member_name, email, registered_at, status,
+            ticket_type, association_id, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, NOW()::date, 'confirmed',
+            $6, $7::uuid, NOW(), NOW()
+          )
+        `,
+          regId,
+          eventId,
+          memberCode || `GUEST-${Math.floor(1000 + Math.random() * 9000)}`,
+          memberName,
+          email,
+          ticketMeta,
+          targetAssoc,
+        ).catch(() => null);
+      }
 
       await this.prisma
         .$executeRawUnsafe(
@@ -4197,19 +4360,25 @@ export class EventsService implements OnModuleInit {
           UPDATE public.event_registrations
           SET member_name = ${fullName},
               email = ${email},
-              phone = ${phone},
-              company = ${company},
-              position = ${position},
-              checkin_status = ${checkinStatus},
               status = 'confirmed',
               checked_in_at = now(),
               ticket_type = ${ticketMeta},
-              qr_payload = ${ticketMeta},
               updated_at = now()
           WHERE id = ${regId}
         `;
       } catch (upErr: any) {
         this.logger.warn(`Update existing reg failed: ${upErr.message}`);
+        try {
+          await this.prisma.$executeRaw`
+            UPDATE public.event_registrations
+            SET member_name = ${fullName},
+                email = ${email},
+                status = 'confirmed',
+                ticket_type = ${ticketMeta},
+                updated_at = now()
+            WHERE id = ${regId}
+          `;
+        } catch {}
       }
     } else {
       regId = `REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
@@ -4218,58 +4387,44 @@ export class EventsService implements OnModuleInit {
       try {
         await this.prisma.$executeRaw`
           INSERT INTO public.event_registrations (
-            id, event_id, member_code, member_name, email, phone,
-            company, position, checkin_status,
-            registered_at, checked_in_at, status, ticket_type, qr_payload,
-            payment_status, payment_amount, association_id,
-            created_at, updated_at
+            id, event_id, member_code, member_name, email,
+            registered_at, checked_in_at, status, ticket_type,
+            association_id, created_at, updated_at
           ) VALUES (
             ${regId},
             ${resolvedEventId},
             ${memberCode},
             ${fullName},
             ${email},
-            ${phone},
-            ${company},
-            ${position},
-            ${checkinStatus},
             now()::date,
             now(),
             'confirmed',
             ${ticketMeta},
-            ${ticketMeta},
-            'free',
-            0,
             ${targetAssociationId}::uuid,
             now(),
             now()
           )
         `;
       } catch (insertErr: any) {
-        this.logger.warn(`Full insert failed (${insertErr.message}), trying core fallback insert...`);
+        this.logger.warn(`Insert with checked_in_at failed (${insertErr.message}), trying core fallback insert...`);
         try {
           await this.prisma.$executeRaw`
             INSERT INTO public.event_registrations (
-              id, event_id, member_code, member_name, email, phone,
-              company, position, checkin_status,
-              registered_at, checked_in_at, status, ticket_type, qr_payload,
-              association_id
+              id, event_id, member_code, member_name, email,
+              registered_at, status, ticket_type,
+              association_id, created_at, updated_at
             ) VALUES (
               ${regId},
               ${resolvedEventId},
               ${memberCode},
               ${fullName},
               ${email},
-              ${phone},
-              ${company},
-              ${position},
-              ${checkinStatus},
               now()::date,
-              now(),
               'confirmed',
               ${ticketMeta},
-              ${ticketMeta},
-              (SELECT association_id FROM public.events WHERE id = ${resolvedEventId} LIMIT 1)
+              ${targetAssociationId}::uuid,
+              now(),
+              now()
             )
           `;
         } catch (coreErr: any) {
